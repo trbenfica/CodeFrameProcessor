@@ -548,13 +548,15 @@ int main() {
 
     for (int i = 0; i < sizeof(bytecode); i++) {
         unsigned int instruction = bytecode[i];
+        char *value;
 
         switch(instruction) {
             case LOAD_CONST:
                 printf("Instrução: LOAD_CONST\n");
                 break;
             case LOAD_FAST:
-                printf("Instrução: LOAD_FAST\n");
+                value = get_value(codeObject, CO_NAMES, 1);
+                printf("co_names[2]: %s\n", value);
                 break;
             case STORE_FAST:
                 printf("Instrução: STORE_FAST\n");
@@ -563,7 +565,7 @@ int main() {
                 printf("Instrução: LOAD_NAME\n");
                 break;
             case STORE_NAME:
-                printf("Instrução: STORE_NAME\n");
+                set_value(codeObject, CO_NAMES, 1, "new_value");
                 break;
             case LOAD_ATTR:
                 printf("Instrução: LOAD_ATTR\n");
@@ -586,20 +588,8 @@ int main() {
         }
     }
 
-    // acessar os dados
-    const char *value = get_value(codeObject, CO_NAMES, 1);
-    printf("co_names[2]: %s\n", value);
-    
-
-    // definir valor
-    if (set_value(codeObject, CO_NAMES, 1, "new_value") == 1) {
-        printf("Valor atualizado com sucesso.\n");
-    }
-
     // chamar frame
     CodeObjectStruct *nestedCodeObject = call_frame(codeObject, 0);
-
-    // Implementar função para liberar a memória alocada
 
     return 0;
 }
