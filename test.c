@@ -283,7 +283,8 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
             break;
     }
 
-    return NULL; // Índice fora do alcance ou campo inválido
+    printf('Erro! Índice fora do alcance ou campo inválido.\n');
+    return NULL;
 }
 
 
@@ -388,7 +389,8 @@ int set_value(CodeObjectStruct *codeObject, CodeObjectField field, int index, co
             break;
     }
 
-    return 0; // Índice fora do alcance ou campo inválido
+    printf('Erro! Falha ao atualizar o valor: índice fora do alcance ou campo inválido.\n');
+    return 0;
 }
 
 
@@ -431,7 +433,8 @@ CodeObjectStruct* call_frame(CodeObjectStruct* codeObject, int n) {
         currentIndex++;
     }
 
-    return NULL; // Índice fora do alcance
+    printf('Erro! Falha ao chamar o frame: índice fora do alcance.\n');
+    return NULL;
 }
 
 
@@ -505,82 +508,98 @@ CodeObjectStruct* process_JSON() {
     return codeObject;
 }
 
+
 int main() {
+   
+    /*
+        Este enum lista as instruções e OPCODES *padronizados* pelo interpretador CPython. Estas 
+        são as instruções abrangidas pelo gerenciador.
+
+        Lista completa de OPCODES disponível em: https://unpyc.sourceforge.net/Opcodes.html
+    */
+    typedef enum {
+        LOAD_CONST = 0x64,
+        LOAD_FAST = 0x7C,
+        STORE_FAST = 0x7D,
+        LOAD_NAME = 0x65,
+        STORE_NAME = 0x5A,
+        LOAD_ATTR = 0x69,
+        STORE_ATTR = 0x5F,
+        LOAD_GLOBAL = 0x74,
+        STORE_GLOBAL = 0x61,
+        CALL_FUNCTION = 0x83,
+        MAKE_FUNCTION = 0x84
+    } Opcode;
+
     CodeObjectStruct *codeObject = process_JSON();
 
-/*
-    Lista de instruções contempladas pelo gerenciador, seguida da tabela
-    de OPCODES *padronizados* pelo interpretador CPython:
-
-        - LOAD_CONST: 64h
-        - LOAD_FAST: 7Ch
-        - STORE_FAST: 7Dh
-        - LOAD_NAME: 65h
-        - STORE_NAME: 5Ah
-        - LOAD_ATTR: 69h
-        - STORE_ATTR: 5Fh
-        - LOAD_GLOBAL: 74h
-        - STORE_GLOBAL: 61h
-        - CALL FUNCTION: 83h
-        - MAKE FUNCTION: 84h
-
-        Lista completa disponível em: https://unpyc.sourceforge.net/Opcodes.html
- */
-    int instruction = 3;
-
-    switch(instruction) {
-        case 0:
-            printf("err 0");
-            break;
-        case 1:
-            printf("1");
-            break;
-        case 2:
-            printf("2");
-            break;
-        case 3:
-            printf("3");
-            break;
-        case 4:
-            printf("4");
-            break;
+    const char* codes = get_value(codeObject, CO_CODE, 0);
+    if (codes != NULL) {
+        printf("co_code: %s\n", codes);
     }
 
-    // Exemplo de como acessar os dados
+    // Exemplo de bytecode
+    unsigned char bytecode[] = {
+        0x64, 0x00, 0x64, 0x01, 0x84, 0x00, 0x5A, 0x00,
+        0x64, 0x02, 0x64, 0x03, 0x84, 0x00, 0x5A, 0x01,
+        0x65, 0x00, 0x64, 0x04, 0x64, 0x05, 0x83, 0x02,
+        0x01, 0x00, 0x64, 0x06, 0x53, 0x00
+    };
+
+    for (int i = 0; i < sizeof(bytecode); i++) {
+        unsigned int instruction = bytecode[i];
+
+        switch(instruction) {
+            case LOAD_CONST:
+                printf("Instrução: LOAD_CONST\n");
+                break;
+            case LOAD_FAST:
+                printf("Instrução: LOAD_FAST\n");
+                break;
+            case STORE_FAST:
+                printf("Instrução: STORE_FAST\n");
+                break;
+            case LOAD_NAME:
+                printf("Instrução: LOAD_NAME\n");
+                break;
+            case STORE_NAME:
+                printf("Instrução: STORE_NAME\n");
+                break;
+            case LOAD_ATTR:
+                printf("Instrução: LOAD_ATTR\n");
+                break;
+            case STORE_ATTR:
+                printf("Instrução: STORE_ATTR\n");
+                break;
+            case LOAD_GLOBAL:
+                printf("Instrução: LOAD_GLOBAL\n");
+                break;
+            case STORE_GLOBAL:
+                printf("Instrução: STORE_GLOBAL\n");
+                break;
+            case CALL_FUNCTION:
+                printf("Instrução: CALL_FUNCTION\n");
+                break;
+            case MAKE_FUNCTION:
+                printf("Instrução: MAKE_FUNCTION\n");
+                break;
+        }
+    }
+
+    // acessar os dados
     const char *value = get_value(codeObject, CO_NAMES, 1);
-    if (value != NULL) {
-        printf("co_names[2]: %s\n", value);
-    } else {
-        printf("Índice fora do alcance ou campo inválido.\n");
-    }
+    printf("co_names[2]: %s\n", value);
+    
 
-    // Exemplo de como definir um novo valor
+    // definir valor
     if (set_value(codeObject, CO_NAMES, 1, "new_value") == 1) {
         printf("Valor atualizado com sucesso.\n");
-    } else {
-        printf("Falha ao atualizar o valor.\n");
     }
 
-    // Verificar o valor atualizado
-    value = get_value(codeObject, CO_NAMES, 1);
-    if (value != NULL) {
-        printf("co_names[2] atualizado: %s\n", value);
-    } else {
-        printf("Índice fora do alcance ou campo inválido.\n");
-    }
-
-    // Exemplo de como chamar um objeto-frame aninhado
+    // chamar frame
     CodeObjectStruct *nestedCodeObject = call_frame(codeObject, 0);
-    if (nestedCodeObject == NULL) {
-        printf("Índice fora do alcance ou não é um objeto-code.\n");
-    }
 
-    // Exemplo de como acessar os dados do objeto-frame aninhado
-    const char *nestedValue = get_value(nestedCodeObject, CO_VARNAMES, 1);
-    printf("co_varnames[1]: %s\n", nestedValue);
-
-    // Lembre-se de liberar a memória alocada para o codeObject e seus membros
-    // freeCodeObject(codeObject);
+    // Implementar função para liberar a memória alocada
 
     return 0;
 }

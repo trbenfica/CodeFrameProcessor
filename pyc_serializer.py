@@ -66,7 +66,8 @@ def show_hex(label, h, indent):
 
 def create_dict(code):
     current_CO = dict()
-    current_CO['co_code'] = code.co_code.decode('latin-1')
+    # current_CO['co_code'] = code.co_code.decode('latin-1')
+    current_CO['co_code'] = code.co_code.hex()
     current_CO['co_names'] = code.co_names
     current_CO['co_varnames'] = code.co_varnames
     current_CO['co_freevars'] = code.co_freevars
@@ -81,7 +82,7 @@ def create_dict(code):
 
 
 def print_help():
-    help_str = ''' Uso: python pyc_serializer.py [OPÇÕES] input_file.json
+    help_str = ''' Uso: python pyc_serializer.py [OPÇÕES] input_file.py
 
     -p \t\t Imprime os bytecodes na tela
     -d \t\t Decodifica os bytecodes, detalhando opcodes e parâmetros. Deve ser usado com -p

@@ -1,0 +1,7 @@
+{
+  "cmake.configureOnOpen": true,
+  "files.associations": {
+    "cjson.h": "c",
+    "stdio.h": "c"
+  }
+}
