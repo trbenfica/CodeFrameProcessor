@@ -4,7 +4,6 @@
 #include <cjson/cJSON.h>
 #include <stdint.h>
 
-
 typedef enum {
     CO_NAMES,
     CO_VARNAMES,
@@ -210,12 +209,11 @@ int getConstItemValue(ConstItem *head, int index, int *isObject) {
 const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int index) {
     KeyValuePair *currentPair;
     ConstItem *currentItem;
-    int currentIndex;
+    int currentIndex = 0;
 
     switch (field) {
         case CO_NAMES:
             currentPair = codeObject->co_names;
-            currentIndex = 0;
             while (currentPair != NULL) {
                 if (currentIndex == index) {
                     return currentPair->key;
@@ -226,7 +224,6 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
             break;
         case CO_VARNAMES:
             currentPair = codeObject->co_varnames;
-            currentIndex = 0;
             while (currentPair != NULL) {
                 if (currentIndex == index) {
                     return currentPair->key;
@@ -237,7 +234,6 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
             break;
         case CO_FREEVARS:
             currentPair = codeObject->co_freevars;
-            currentIndex = 0;
             while (currentPair != NULL) {
                 if (currentIndex == index) {
                     return currentPair->key;
@@ -248,7 +244,6 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
             break;
         case CO_CELLVARS:
             currentPair = codeObject->co_cellvars;
-            currentIndex = 0;
             while (currentPair != NULL) {
                 if (currentIndex == index) {
                     return currentPair->key;
@@ -259,7 +254,6 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
             break;
         case CO_CONSTS:
             currentItem = codeObject->co_consts;
-            currentIndex = 0;
             while (currentItem != NULL) {
                 if (currentIndex == index) {
                     if (currentItem->isObject) {
@@ -274,11 +268,6 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
                 currentIndex++;
             }
             break;
-        case CO_CODE:
-            if (index == 0) {
-                return codeObject->co_code;
-            }
-            break;
         default:
             break;
     }
@@ -287,6 +276,9 @@ const char *get_value(CodeObjectStruct *codeObject, CodeObjectField field, int i
     return NULL;
 }
 
+char* get_code(CodeObjectStruct *codeObject) {
+    return codeObject->co_code;
+}
 
 int setKeyValuePairValue(KeyValuePair *head, int index, const char *newValue) {
     int currentIndex = 0;
@@ -504,13 +496,33 @@ CodeObjectStruct* process_JSON() {
 
     // Liberar a memória alocada para o JSON
     cJSON_Delete(json);
-
     return codeObject;
+}
+
+int convert_char_to_hex(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else if (c >= 'A' && c <= 'F')
+        return 10 + (c - 'A');
+    else if (c >= 'a' && c <= 'f')
+        return 10 + (c - 'a');
+    return -1; // Retorna -1 em caso de erro
+}
+
+int convert_two_chars_to_hex(char high, char low) {
+    int high_nibble = convert_char_to_hex(high);
+    int low_nibble = convert_char_to_hex(low);
+
+    if (high_nibble == -1 || low_nibble == -1) {
+        printf("Erro: caracteres inválidos!\n");
+        return -1; // Erro
+    }
+
+    return (high_nibble << 4) | low_nibble;
 }
 
 
 int main() {
-   
     /*
         Este enum lista as instruções e OPCODES *padronizados* pelo interpretador CPython. Estas 
         são as instruções abrangidas pelo gerenciador.
@@ -529,67 +541,64 @@ int main() {
         STORE_GLOBAL = 0x61,
         CALL_FUNCTION = 0x83,
         MAKE_FUNCTION = 0x84
-    } Opcode;
+    } Opcode; 
 
-    CodeObjectStruct *codeObject = process_JSON();
 
-    const char* codes = get_value(codeObject, CO_CODE, 0);
-    if (codes != NULL) {
-        printf("co_code: %s\n", codes);
-    }
+    CodeObjectStruct *currentFrame = process_JSON();
+    char* bytecode = get_code(currentFrame);
 
-    // Exemplo de bytecode
-    unsigned char bytecode[] = {
-        0x64, 0x00, 0x64, 0x01, 0x84, 0x00, 0x5A, 0x00,
-        0x64, 0x02, 0x64, 0x03, 0x84, 0x00, 0x5A, 0x01,
-        0x65, 0x00, 0x64, 0x04, 0x64, 0x05, 0x83, 0x02,
-        0x01, 0x00, 0x64, 0x06, 0x53, 0x00
-    };
-
-    for (int i = 0; i < sizeof(bytecode); i++) {
-        unsigned int instruction = bytecode[i];
-        char *value;
+    for (int i = 0; i < strlen(bytecode); i += 4) {
+        int instruction = convert_two_chars_to_hex(bytecode[i], bytecode[i + 1]);
+        int arg = convert_two_chars_to_hex(bytecode[i + 2], bytecode[i + 3]);
+        char *result = NULL;
 
         switch(instruction) {
             case LOAD_CONST:
-                printf("Instrução: LOAD_CONST\n");
+                result = get_value(currentFrame, CO_CONSTS, arg);
                 break;
             case LOAD_FAST:
-                value = get_value(codeObject, CO_NAMES, 1);
-                printf("co_names[2]: %s\n", value);
+                result = get_value(currentFrame, CO_NAMES, arg);
                 break;
             case STORE_FAST:
-                printf("Instrução: STORE_FAST\n");
+                result = get_value(currentFrame, CO_NAMES, arg);
                 break;
             case LOAD_NAME:
-                printf("Instrução: LOAD_NAME\n");
+                result = get_value(currentFrame, CO_NAMES, arg);
                 break;
             case STORE_NAME:
-                set_value(codeObject, CO_NAMES, 1, "new_value");
+                result = set_value(currentFrame, CO_NAMES, arg, "new_value");
                 break;
             case LOAD_ATTR:
-                printf("Instrução: LOAD_ATTR\n");
+                result = get_value(currentFrame, CO_NAMES, arg);
                 break;
             case STORE_ATTR:
-                printf("Instrução: STORE_ATTR\n");
+                result = set_value(currentFrame, CO_NAMES, arg, "new_value");
                 break;
             case LOAD_GLOBAL:
-                printf("Instrução: LOAD_GLOBAL\n");
+                result = get_value(currentFrame, CO_NAMES, arg);
                 break;
             case STORE_GLOBAL:
-                printf("Instrução: STORE_GLOBAL\n");
+                result = set_value(currentFrame, CO_NAMES, 1, "new_value");
                 break;
             case CALL_FUNCTION:
-                printf("Instrução: CALL_FUNCTION\n");
+                currentFrame = call_frame(currentFrame, 0);
+                result = get_code(currentFrame);
                 break;
             case MAKE_FUNCTION:
-                printf("Instrução: MAKE_FUNCTION\n");
+                printf("not implemented");
                 break;
         }
+
+        printf("Instrução: %d", instruction);
     }
+    
 
     // chamar frame
-    CodeObjectStruct *nestedCodeObject = call_frame(codeObject, 0);
+    // CodeObjectStruct *nestedCodeObject = call_frame(codeObject, 0);
+    
+
+    // chamar frame
+    // CodeObjectStruct *nestedCodeObject = call_frame(codeObject, 0);
 
     return 0;
 }

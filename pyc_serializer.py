@@ -83,6 +83,7 @@ def print_help():
     -s          Serializa os objetos-código e os escreve no arquivo especificado por -o
     -o output   Especifica o arquivo de saída para a serialização (default: output.json)
     -h          Mostra esta mensagem de ajuda
+    -i          Indica o arquivo de entrada
     '''
     print(help_str)
 
