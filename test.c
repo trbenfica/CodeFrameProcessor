@@ -432,7 +432,7 @@ CodeObjectStruct* call_frame(CodeObjectStruct* codeObject, int n) {
 
 char* initialize_file() {
     // Abrir o arquivo JSON para leitura
-    FILE *file = fopen("output.json", "r");
+    FILE *file = fopen("data.json", "r");
     if (file == NULL) {
         fprintf(stderr, "Erro ao abrir o arquivo JSON.\n");
         return 1;

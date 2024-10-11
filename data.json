@@ -2,7 +2,8 @@
     "co_code": "6400640184005a006402640384005a016500640464058302010064065300",
     "co_names": [
         "compute",
-        "sum"
+        "sum",
+        "third"
     ],
     "co_varnames": [],
     "co_freevars": [],
