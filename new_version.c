@@ -11,6 +11,16 @@ typedef enum {
     TYPE_NULL
 } ConstType;
 
+// Definir o enum para identificar os campos
+typedef enum {
+    CO_NAMES,
+    CO_VARNAMES,
+    CO_FREEVARS,
+    CO_CELLVARS,
+    CO_CONSTS,
+    CO_CODE
+} CodeObjectField;
+
 // Estrutura para armazenar um item de co_consts
 typedef struct ConstItem {
     ConstType type;
@@ -21,7 +31,7 @@ typedef struct ConstItem {
     };
 } ConstItem;
 
-// Estrutura recursiva para armazenar o JSON
+// Estrutura recursiva para armazenar o JSON (Frame Context)
 typedef struct ConstNode {
     char *co_code;
     char **co_names;
@@ -35,6 +45,27 @@ typedef struct ConstNode {
     ConstItem **co_consts; // Recursão, strings, números, ou null
     size_t co_consts_len;
 } ConstNode;
+
+// Definir a estrutura ConstNode (simplificada)
+// typedef struct ConstNode {
+//     char *co_code;
+//     char **co_names;
+//     size_t co_names_len;
+//     char **co_varnames;
+//     size_t co_varnames_len;
+//     char **co_freevars;
+//     size_t co_freevars_len;
+//     char **co_cellvars;
+//     size_t co_cellvars_len;
+//     struct ConstNode **co_consts; // Pode conter outros ConstNode ou outros tipos
+//     size_t co_consts_len;
+// } ConstNode;
+
+// Estrutura para armazenar frames (pilha de contextos)
+typedef struct Frame {
+    ConstNode *current_context;  // Contexto atual (CONST_NODE)
+    struct Frame *previous_frame; // Referência ao frame anterior (pilha)
+} Frame;
 
 // Função auxiliar para extrair arrays de strings
 char **parse_string_array(cJSON *json_array, size_t *length) {
@@ -154,7 +185,91 @@ cJSON* load_json_from_file(const char *filename) {
     return json;
 }
 
-// Função principal para testar o parsing
+// Função para mudar de contexto para um novo frame baseado em um ConstNode
+Frame* change_frame(Frame *current_frame, ConstNode *new_context) {
+    Frame *new_frame = malloc(sizeof(Frame));
+    new_frame->current_context = new_context;
+    new_frame->previous_frame = current_frame;
+    return new_frame;
+}
+
+// Função para restaurar o frame anterior (pop)
+Frame* restore_previous_frame(Frame *current_frame) {
+    if (current_frame == NULL || current_frame->previous_frame == NULL) {
+        printf("Nenhum frame anterior para restaurar!\n");
+        return current_frame;
+    }
+
+    Frame *previous_frame = current_frame->previous_frame;
+    free(current_frame); // Liberar o frame atual
+    return previous_frame;
+}
+
+void *get_value(ConstNode *context, CodeObjectField field, size_t index) {
+    if (!context) {
+        return NULL; // Verificar se o contexto é válido
+    }
+
+    switch (field) {
+        case CO_NAMES:
+            if (index < context->co_names_len) {
+                return context->co_names[index];
+            }
+            break;
+        case CO_VARNAMES:
+            if (index < context->co_varnames_len) {
+                return context->co_varnames[index];
+            }
+            break;
+        case CO_FREEVARS:
+            if (index < context->co_freevars_len) {
+                return context->co_freevars[index];
+            }
+            break;
+        case CO_CELLVARS:
+            if (index < context->co_cellvars_len) {
+                return context->co_cellvars[index];
+            }
+            break;
+        case CO_CONSTS:
+            if (index < context->co_consts_len) {
+                if (context->co_consts[index]) {
+                    return context->co_consts[index]; // Pode ser ConstNode ou outro tipo
+                }
+            }
+            break;
+        case CO_CODE:
+            return context->co_code;
+        default:
+            return NULL; // Se o campo não for reconhecido
+    }
+
+    return NULL; // Retorna NULL se o índice for inválido ou o campo não existir
+}
+
+int convert_char_to_hex(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    else if (c >= 'A' && c <= 'F')
+        return 10 + (c - 'A');
+    else if (c >= 'a' && c <= 'f')
+        return 10 + (c - 'a');
+    return -1; // Retorna -1 em caso de erro
+}
+
+int convert_two_chars_to_hex(char high, char low) {
+    int high_nibble = convert_char_to_hex(high);
+    int low_nibble = convert_char_to_hex(low);
+
+    if (high_nibble == -1 || low_nibble == -1) {
+        printf("Erro: caracteres inválidos!\n");
+        return -1; // Erro
+    }
+
+    return (high_nibble << 4) | low_nibble;
+}
+
+
 int main() {
     const char *filename = "data.json"; // Nome do arquivo JSON
     cJSON *json = load_json_from_file(filename);
@@ -165,30 +280,112 @@ int main() {
     // Fazer o parsing do JSON
     ConstNode *root = parse_json(json);
 
-    // Acessar e exibir dados (exemplo de acesso ao primeiro nome)
-    if (root->co_names_len > 0) {
-        printf("Primeiro co_name: %s\n", root->co_names[0]);
-    }
+    // Iniciar o frame atual com o contexto raiz
+    Frame *current_frame = malloc(sizeof(Frame));
+    current_frame->current_context = root;
+    current_frame->previous_frame = NULL;
 
-    // Exemplo de acesso ao co_consts
-    if (root->co_consts_len > 0) {
-        for (size_t i = 0; i < root->co_consts_len; i++) {
-            if (root->co_consts[i]->type == TYPE_STRING) {
-                printf("Const %zu é uma string: %s\n", i, root->co_consts[i]->string_val);
-            } else if (root->co_consts[i]->type == TYPE_NUMBER) {
-                printf("Const %zu é um número: %f\n", i, root->co_consts[i]->number_val);
-            } else if (root->co_consts[i]->type == TYPE_NULL) {
-                printf("Const %zu é null\n", i);
-            } else if (root->co_consts[i]->type == TYPE_CONST_NODE) {
-                printf("Const %zu é um objeto recursivo\n", i);
-            }
+    // Variável auxiliar para o contexto atual
+    ConstNode *current_context = current_frame->current_context;
+
+    // Exemplo de acesso ao primeiro co_name usando a variável auxiliar
+    // if (current_context->co_names_len > 0) {
+    //     printf("co_code: %s\n", current_context->co_code);
+
+    //     printf("co_names: %s\n", current_context->co_names[0]);
+    //     printf("co_names: %s\n", current_context->co_names[1]);
+    //     printf("co_names: %s\n", current_context->co_names[2]);
+    // }
+
+    // Exemplo de mudar para um novo frame (constante dentro de co_consts)
+    // if (current_context->co_consts_len > 0) {
+    //     for (size_t i = 0; i < current_context->co_consts_len; i++) {
+    //         if (current_context->co_consts[i]->type == TYPE_CONST_NODE) {
+    //             printf("Mudando para o frame de ConstNode no índice %zu\n", i);
+    //             current_frame = change_frame(current_frame, current_context->co_consts[i]->node);
+    //             current_context = current_frame->current_context; // Atualizar o contexto atual
+    //             break; // Mudança de contexto para o primeiro ConstNode encontrado
+    //         }
+    //     }
+    // }
+
+    /*
+      Este enum lista as instruções e OPCODES *padronizados* pelo interpretador CPython. Estas 
+      são as instruções abrangidas pelo gerenciador.
+
+      Lista completa de OPCODES disponível em: https://unpyc.sourceforge.net/Opcodes.html
+    */
+    typedef enum {
+        LOAD_CONST = 0x64,
+        LOAD_FAST = 0x7C,
+        STORE_FAST = 0x7D,
+        LOAD_NAME = 0x65,
+        STORE_NAME = 0x5A,
+        LOAD_ATTR = 0x69,
+        STORE_ATTR = 0x5F,
+        LOAD_GLOBAL = 0x74,
+        STORE_GLOBAL = 0x61,
+        CALL_FUNCTION = 0x83,
+        MAKE_FUNCTION = 0x84
+    } Opcode; 
+
+    char* bytecode = current_context->co_code;
+
+    for (int i = 0; i < strlen(bytecode); i += 4) {
+        int instruction = convert_two_chars_to_hex(bytecode[i], bytecode[i + 1]);
+        int arg = convert_two_chars_to_hex(bytecode[i + 2], bytecode[i + 3]);
+        void *result = NULL;
+
+        switch(instruction) {
+            case LOAD_CONST:
+                char *result = (char *)get_value(current_context, CO_NAMES, 0);
+                printf("\nLOAD CONST: %s", result);
+                break;
+            case LOAD_FAST:
+                result = get_value(current_context, CO_NAMES, arg);
+                break;
+            case STORE_FAST:
+                result = get_value(current_context, CO_NAMES, arg);
+                break;
+            case LOAD_NAME:
+                result = (char *)get_value(&root, CO_NAMES, 0);
+
+                break;
+            case STORE_NAME:
+                // result = set_value(current_context, CO_NAMES, arg, "new_value");
+                break;
+            case LOAD_ATTR:
+                result = get_value(current_context, CO_NAMES, arg);
+                break;
+            case STORE_ATTR:
+                // result = set_value(current_context, CO_NAMES, arg, "new_value");
+                break;
+            case LOAD_GLOBAL:
+                result = get_value(current_context, CO_NAMES, arg);
+                break;
+            case STORE_GLOBAL:
+                // result = set_value(current_context, CO_NAMES, 1, "new_value");
+                break;
+            case CALL_FUNCTION:
+                current_frame = restore_previous_frame(current_frame);
+                current_context = current_frame->current_context;
+                result = (char *)get_value(&root, CO_NAMES, 0);
+                // result = get_code(current_context);
+                break;
+            case MAKE_FUNCTION:
+                printf("not implemented");
+                break;
         }
+
+        printf("Instrução: %d", instruction);
     }
 
-    // Processar e navegar pelos dados aqui...
+    
+    
 
-    // Liberar memória alocada
+    // Liberar memória e finalizar
     cJSON_Delete(json);
-
+    free(root);
     return EXIT_SUCCESS;
 }
+
