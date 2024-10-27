@@ -271,7 +271,7 @@ int convert_two_chars_to_hex(char high, char low) {
 
 
 int main() {
-    const char *filename = "data.json"; // Nome do arquivo JSON
+    const char *filename = "output.json"; // Nome do arquivo JSON
     cJSON *json = load_json_from_file(filename);
     if (!json) {
         return EXIT_FAILURE;
