@@ -1,0 +1,38 @@
+{
+    "co_code": "64005a0064015a0164025a026403640484005a0365046503640583018301010064065300",
+    "co_names": [
+        "a",
+        "b",
+        "c",
+        "join",
+        "print"
+    ],
+    "co_varnames": [],
+    "co_freevars": [],
+    "co_cellvars": [],
+    "co_consts": [
+        "global",
+        23,
+        true,
+        {
+            "co_code": "740072087c007401170074021700530064015300",
+            "co_names": [
+                "c",
+                "a",
+                "b"
+            ],
+            "co_varnames": [
+                "x"
+            ],
+            "co_freevars": [],
+            "co_cellvars": [],
+            "co_consts": [
+                null,
+                -1
+            ]
+        },
+        "join",
+        "testing",
+        null
+    ]
+}
