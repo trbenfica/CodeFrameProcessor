@@ -1,7 +1,10 @@
 
 a = "global"
 b = 23
-c = True
+c = 50
+d = True
+
+e = b + c
 
 def join(x):
     if c:
