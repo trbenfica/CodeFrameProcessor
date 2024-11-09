@@ -8,13 +8,46 @@
 #include <typeinfo>
 #include "include/json.hpp"
 #include <bitset>
+#include <iomanip>
 		    
 // Estruturas e tipos previamente definidos
 class Code;  // Declaração antecipada
 using VarType = std::variant<Code, int, bool, std::string, std::nullptr_t>;
 
-// Code* globals = nullptr;
+// Função para converter um inteiro de 32 bits para binário e escrevê-lo no fluxo
+void writeBinaryInt32(std::ostream& os, uint32_t value) {
+    os.write(reinterpret_cast<const char*>(&value), sizeof(value));
+}
+
+void hexToBinaryStream(const std::string& hex, std::ostream& outStream) {
+    for (size_t i = 0; i < hex.length(); i += 2) {
+        std::string byteStr = hex.substr(i, 2);  // Pega dois caracteres (um byte)
+        unsigned int byte;
+        std::stringstream(byteStr) >> std::hex >> byte;  // Converte o par hex para inteiro
+
+        // Escreve o byte como binário no fluxo
+        outStream.put(static_cast<char>(byte));  // Coloca o byte no fluxo de saída
+    }
+}
+
 std::vector<VarType>* globals = nullptr;
+
+class PayloadType {
+public:
+    static const std::unordered_map<std::string, std::string> typeMap;
+};
+
+// Mapeamento entre tipo e código binário
+const std::unordered_map<std::string, std::string> PayloadType::typeMap = {
+    {"Code", "100"},
+    {"nullptr_t", "000"},
+    {"int", "001"},
+    {"float", "010"},
+    {"string", "011"},
+    {"bool", "101"},
+    {"custom", "110"},
+    {"unknown", "111"}
+};
 
 class Code {
 public:
@@ -45,11 +78,11 @@ public:
                 std::visit([](const auto& val) {
                     using T = std::decay_t<decltype(val)>;
                     if constexpr (std::is_same_v<T, Code>) {
-                        std::cout << "Code Object" << std::endl; // Você pode chamar um método print() específico se necessário
+                        std::cout << "Code Object" << std::endl;
                     } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
                         std::cout << "null ";
                     } else {
-                        std::cout << val << " "; // Imprime o valor
+                        std::cout << val << " ";
                     }
                 }, item);
             }
@@ -72,36 +105,64 @@ public:
         printVector(co_consts);
     }
 
-    std::string toBinaryString(int number) const {
-        return std::bitset<32>(number).to_string();  // Converte para 32 bits
-    }
+    // Método para acessar um objeto Code aninhado
+    const Code& getCodeFromConsts(size_t index) const {
+        if (index >= co_consts.size()) {
+            throw std::out_of_range("Index out of range for co_consts");
+        }
 
-    std::string formatForMaster() const {
+        // Verifica se o elemento no índice é do tipo Code
+        if (std::holds_alternative<Code>(co_consts[index])) {
+            return std::get<Code>(co_consts[index]); // Retorna a referência ao objeto Code
+        } else {
+            throw std::bad_variant_access(); // Lança uma exceção se não for do tipo Code
+        }
+    }
+        
+    std::string generatePayload() const {
         const char GS = 29;  // ASCII Group Separator
         const char US = 31;  // ASCII Unit Separator
         const char NULL_CHAR = 0;  // ASCII NULL
 
-        // Função auxiliar para converter um int em uma string binária de 32 bits
+        // Função para converter uma string de 3 bits em um byte
+        auto bitsToByte = [](const std::string& bits) -> char {
+            return static_cast<char>(std::bitset<3>(bits).to_ulong());
+        };
 
         std::ostringstream result;
-        result << co_code << GS;  // co_code diretamente
+        hexToBinaryStream(co_code, result);
+        result << GS;
 
-        // Função lambda para formatar um vetor
+        // Função lambda para formatar um vetor com códigos de tipo
         auto formatVector = [&](const std::vector<VarType>& vec) -> std::string {
             std::ostringstream oss;
-            oss << vec.size();
+            writeBinaryInt32(oss, vec.size());
             for (const auto& item : vec) {
-                oss << US;
-                   std::visit([&oss, this](const auto& val) {
+                oss << US;  // Inicia o item com um US
+                
+                std::visit([&oss, &bitsToByte, this](const auto& val) {
                     using T = std::decay_t<decltype(val)>;
                     if constexpr (std::is_same_v<T, Code>) {
-                        oss << NULL_CHAR;  // Representação nula para objetos Code
+                        oss << bitsToByte(PayloadType::typeMap.at("Code"));  // Código para Code como byte binário
+                        oss << NULL_CHAR;
                     } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
-                        oss << NULL_CHAR;  // Representação nula para nullptr
+                        oss << bitsToByte(PayloadType::typeMap.at("nullptr_t"));  // Código para nullptr como byte binário
+                        oss << NULL_CHAR;
                     } else if constexpr (std::is_integral_v<T>) {
-                        oss << toBinaryString(val);  // Inteiros em formato binário
+                        oss << bitsToByte(PayloadType::typeMap.at("int"));  // Código para int como byte binário
+                        writeBinaryInt32(oss, val);
+                    } else if constexpr (std::is_floating_point_v<T>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("float"));  // Código para float como byte binário
+                        oss << val;
+                    } else if constexpr (std::is_same_v<T, std::string>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("string"));  // Código para string como byte binário
+                        oss << val;
+                    } else if constexpr (std::is_same_v<T, bool>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("bool"));  // Código para bool como byte binário
+                        oss << (val ? "1" : "0");
                     } else {
-                        oss << val;  // Outros tipos são adicionados diretamente
+                        oss << bitsToByte(PayloadType::typeMap.at("unknown"));  // Código reservado como byte binário
+                        oss << "undefined";  // Placeholder para tipos não especificados
                     }
                 }, item);
             }
@@ -118,20 +179,34 @@ public:
         // Formata o campo CONSTS, sem incluir o tamanho
         for (size_t i = 0; i < co_consts.size(); ++i) {
             if (i > 0) result << US;
-            std::visit([&result, this](const auto& val) {
+            std::visit([&result, &bitsToByte, this](const auto& val) {
                 using T = std::decay_t<decltype(val)>;
-                if constexpr (std::is_same_v<T, Code> || std::is_same_v<T, std::nullptr_t>) {
-                    result << NULL_CHAR;  // NULL_CHAR para Code ou nullptr
+                if constexpr (std::is_same_v<T, Code>) {
+                    result << bitsToByte(PayloadType::typeMap.at("Code"));  // NULL_CHAR para Code ou nullptr como byte binário
+                    result << NULL_CHAR;
+                } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+                    result << bitsToByte(PayloadType::typeMap.at("nullptr_t"));  // NULL_CHAR para Code ou nullptr como byte binário
+                    result << NULL_CHAR;
                 } else if constexpr (std::is_integral_v<T>) {
-                    std::cout << "CAI";
-                    result << toBinaryString(val);  // Inteiros em formato binário
+                    result << bitsToByte(PayloadType::typeMap.at("int"));  // Código para int como byte binário
+                    writeBinaryInt32(result, val);
+                } else if constexpr (std::is_floating_point_v<T>) {
+                    result << bitsToByte(PayloadType::typeMap.at("float"));  // Código para float como byte binário
+                    result << val;
+                } else if constexpr (std::is_same_v<T, std::string>) {
+                    result << bitsToByte(PayloadType::typeMap.at("string"));  // Código para string como byte binário
+                    result << val;
+                } else if constexpr (std::is_same_v<T, bool>) {
+                    result << bitsToByte(PayloadType::typeMap.at("bool"));  // Código para bool como byte binário
+                    result << (val ? "1" : "0");
                 } else {
-                    result << val;  // Outros tipos são adicionados diretamente
-                } 
+                    result << bitsToByte(PayloadType::typeMap.at("unkown"));  // Código reservado como byte binário
+                    result << "undefined";  // Placeholder para tipos não especificados
+                }
             }, co_consts[i]);
         }
 
-
+        // Salva o payload em um arquivo binário
         std::string resultString = result.str();
         std::ofstream outFile("output.bin", std::ios::binary);
         if (outFile) {
@@ -142,24 +217,9 @@ public:
         
         return result.str();
     }
-
-
-    // Método para acessar um objeto Code em co_consts
-    const Code& getCodeFromConsts(size_t index) const {
-        if (index >= co_consts.size()) {
-            throw std::out_of_range("Index out of range for co_consts");
-        }
-
-        // Verifica se o elemento no índice é do tipo Code
-        if (std::holds_alternative<Code>(co_consts[index])) {
-            return std::get<Code>(co_consts[index]); // Retorna a referência ao objeto Code
-        } else {
-            throw std::bad_variant_access(); // Lança uma exceção se não for do tipo Code
-        }
-    }
 };
 
-// Função para ler o JSON e criar o objeto Code (permanece a mesma)
+// Função para ler o JSON e criar o objeto Code
 Code readCodeFromJson(const nlohmann::json& jsonData) {
     Code codeObj;
 
@@ -240,16 +300,20 @@ public:
 /* Backlog
  *
  * [OK] globals
- * [OK] formatCodeForMaster
- * decodeCodeFromMaster
- * updateframe
+ * [OK] generatePayload
+ * updateFromPayload
+ * ajustar getCodeFromConsts: code estará numa variável, não em consts
+ * 
+ * ajustar printCode: precisa debbugar (?)
+ * 
  * 
  * acertar protocolo de comunicação (flags, espera, etc.)
- * testar: mais profundidade
-
- * como mapear os tipos do objeto code?
- * instruções de OOP?
+ * testar
+ * mostrar formato renato/bruno
  *
+ * instruções de OOP?
+ * como fica MAKE_FUNCTION?
+ * 
  * */
 
 int main() {
@@ -260,7 +324,7 @@ int main() {
         // globals->print();
         // code.print(); 
 
-        code.formatForMaster();
+        code.generatePayload();
             
         CodeNavigator navigator;
         navigator.push(&code);
