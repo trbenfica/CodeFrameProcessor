@@ -35,6 +35,7 @@ std::vector<VarType>* globals = nullptr;
 class PayloadType {
 public:
     static const std::unordered_map<std::string, std::string> typeMap;
+    static const std::unordered_map<std::string, std::string> codeMap;
 };
 
 // Mapeamento entre tipo e código binário
@@ -47,6 +48,18 @@ const std::unordered_map<std::string, std::string> PayloadType::typeMap = {
     {"bool", "101"},
     {"custom", "110"},
     {"unknown", "111"}
+};
+
+// Mapeamento invertido entre código binário e tipo
+const std::unordered_map<std::string, std::string> PayloadType::codeMap = {
+    {"100", "Code"},
+    {"000", "nullptr_t"},
+    {"001", "int"},
+    {"010", "float"},
+    {"011", "string"},
+    {"101", "bool"},
+    {"110", "custom"},
+    {"111", "unknown"}
 };
 
 class Code {
@@ -78,11 +91,13 @@ public:
                 std::visit([](const auto& val) {
                     using T = std::decay_t<decltype(val)>;
                     if constexpr (std::is_same_v<T, Code>) {
-                        std::cout << "Code Object" << std::endl;
+                        std::cout << "<code> ";
                     } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
                         std::cout << "null ";
-                    } else {
+                    } else if constexpr (std::is_integral_v<T>) {
                         std::cout << val << " ";
+                    } else {
+                        std::cout << "\"" << val << "\"" << " ";
                     }
                 }, item);
             }
@@ -217,6 +232,125 @@ public:
         
         return result.str();
     }
+
+    std::string generateTestPayload() const {
+        const char GS = 29;  // ASCII Group Separator
+        const char US = 31;  // ASCII Unit Separator
+        const char NULL_CHAR = 0;  // ASCII NULL
+
+        // Função para converter uma string de 3 bits em um byte
+        auto bitsToByte = [](const std::string& bits) -> char {
+            return static_cast<char>(std::bitset<3>(bits).to_ulong());
+        };
+
+        std::ostringstream result;
+
+        // Função lambda para formatar um vetor com códigos de tipo
+        auto formatVector = [&](const std::vector<VarType>& vec) -> std::string {
+            std::ostringstream oss;
+            for (const auto& item : vec) {
+                oss << US;  // Inicia o item com um US
+                
+                std::visit([&oss, &bitsToByte, this](const auto& val) {
+                    using T = std::decay_t<decltype(val)>;
+                    if constexpr (std::is_same_v<T, Code>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("Code"));  // Código para Code como byte binário
+                        oss << NULL_CHAR;
+                    } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("nullptr_t"));  // Código para nullptr como byte binário
+                        oss << NULL_CHAR;
+                    } else if constexpr (std::is_integral_v<T>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("int"));  // Código para int como byte binário
+                        writeBinaryInt32(oss, val);
+                    } else if constexpr (std::is_floating_point_v<T>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("float"));  // Código para float como byte binário
+                        oss << val;
+                    } else if constexpr (std::is_same_v<T, std::string>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("string"));  // Código para string como byte binário
+                        oss << val;
+                    } else if constexpr (std::is_same_v<T, bool>) {
+                        oss << bitsToByte(PayloadType::typeMap.at("bool"));  // Código para bool como byte binário
+                        oss << (val ? "1" : "0");
+                    } else {
+                        oss << bitsToByte(PayloadType::typeMap.at("unknown"));  // Código reservado como byte binário
+                        oss << "undefined";  // Placeholder para tipos não especificados
+                    }
+                }, item);
+            }
+            return oss.str();
+        };
+
+        // Concatena cada campo formatado com GS entre eles
+        result << formatVector(*globals) << GS;
+        result << formatVector(co_names) << GS;
+        result << formatVector(co_varnames) << GS;
+        result << formatVector(co_freevars) << GS;
+        result << formatVector(co_cellvars) << GS;
+
+        // Salva o payload em um arquivo binário
+        std::string resultString = result.str();
+        std::ofstream outFile("input.bin", std::ios::binary);
+        if (outFile) {
+            outFile.write(resultString.data(), resultString.size());
+        } else {
+            std::cerr << "Erro ao abrir o arquivo para escrita!" << std::endl;
+        }
+        
+        return result.str();
+    }
+
+    void updateFromPayload(const std::string& payload) {
+        const char GS = 29;
+        const char US = 31;
+
+        auto parseVector = [&](const std::string& segment) -> std::vector<VarType> {
+            std::vector<VarType> result;
+            std::istringstream stream(segment);
+            std::string item;
+            
+            while (std::getline(stream, item, US)) {
+                if (item.empty()) continue;
+
+                std::string typeCode = item.substr(0, 1);  // Extrai apenas o primeiro byte como tipo
+                std::string value = item.substr(1);         // Extrai o restante como dados
+                
+                // Converte typeCode para uma string de bits e busca no mapa
+                std::string typeBits = std::bitset<3>(typeCode[0]).to_string(); // Converte o byte para uma string de 3 bits
+                std::string typeName = PayloadType::codeMap.at(typeBits);
+                
+                if (typeName == "Code") {
+                    result.emplace_back(Code()); // Insere um objeto Code vazio (ou implemente um código de deserialização)
+                } else if (typeName == "nullptr_t") {
+                    result.emplace_back(nullptr); // Insere um nullptr
+                } else if (typeName == "int") {
+                    result.emplace_back(static_cast<int>(static_cast<unsigned char>(value[0])));
+                } else if (typeName == "string") {
+                    result.emplace_back(value); // Adiciona diretamente como string
+                } else if (typeName == "bool") {
+                    result.emplace_back(value == "1"); // Converte "1" para true, "0" para false
+                } else {
+                    throw std::runtime_error("Tipo desconhecido no payload");
+                }
+            }
+            
+            return result;
+        };
+
+        // Divide o payload em segmentos usando GS
+        std::vector<std::string> segments;
+        std::istringstream stream(payload);
+        std::string segment;
+        
+        while (std::getline(stream, segment, GS)) {
+            segments.push_back(segment);
+        }
+
+        // Atualiza os campos com os segmentos decodificados
+        if (segments.size() > 0) co_names = parseVector(segments[0]);
+        if (segments.size() > 1) co_varnames = parseVector(segments[1]);
+        if (segments.size() > 2) co_freevars = parseVector(segments[2]);
+        if (segments.size() > 3) co_cellvars = parseVector(segments[3]);
+    }
 };
 
 // Função para ler o JSON e criar o objeto Code
@@ -296,23 +430,44 @@ public:
     }
 };
 
+std::string readPayloadFromFile(const std::string& filename) {
+    std::ifstream inputFile(filename, std::ios::binary);
+    if (!inputFile) {
+        throw std::runtime_error("Erro ao abrir o arquivo para leitura.");
+    }
+
+    // Move o ponteiro de leitura para o final do arquivo para obter o tamanho
+    inputFile.seekg(0, std::ios::end);
+    std::streamsize fileSize = inputFile.tellg();
+    inputFile.seekg(0, std::ios::beg);
+
+    // Lê o conteúdo do arquivo para uma string
+    std::string payload(fileSize, '\0');
+    if (!inputFile.read(&payload[0], fileSize)) {
+        throw std::runtime_error("Erro ao ler o conteúdo do arquivo.");
+    }
+
+    return payload;
+}
+
 
 /* Backlog
  *
  * [OK] globals
  * [OK] generatePayload
  * updateFromPayload
- * ajustar getCodeFromConsts: code estará numa variável, não em consts
+ * troca de frames:
+ *  - ajustar lógica para arrays em vez de code (?)
+ *  - ajustar getCodeFromConsts: code estará numa variável, não em consts
  * 
- * ajustar printCode: precisa debbugar (?)
- * 
- * 
+ * globals deveria ser campo estático da classe?
  * acertar protocolo de comunicação (flags, espera, etc.)
+ * como fica MAKE_FUNCTION?
  * testar
  * mostrar formato renato/bruno
  *
  * instruções de OOP?
- * como fica MAKE_FUNCTION?
+ * avisar renato que type ocupará 1 byte, e não 3 bits
  * 
  * */
 
@@ -320,11 +475,16 @@ int main() {
     try {
         Code code = readCodeFromJsonFile("code.json");
         globals = &code.co_names;
-        // printf("globals: \n");
-        // globals->print();
-        // code.print(); 
+        code.print();
+        // code.generateTestPayload();
+        
 
-        code.generatePayload();
+        std::cout << std::endl << "____ depois: _____" << std::endl;
+        std::string payload = readPayloadFromFile("input.bin");
+        code.updateFromPayload(payload);
+        code.print();
+
+        // code.generatePayload();
             
         CodeNavigator navigator;
         navigator.push(&code);

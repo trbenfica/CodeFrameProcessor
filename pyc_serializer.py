@@ -13,7 +13,7 @@ import os
 serialize = False
 print_instructions = False
 decode_instructions = False
-output_file = 'output.json'
+output_file = 'code.json'
 input_file = 'input.py'
 
 def initialize_parser(fname):

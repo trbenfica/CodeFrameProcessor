@@ -1,41 +1,52 @@
 {
-    "co_code": "64005a0064015a0164025a0264035a036501650217005a046404640584005a0565066505640683018301010064075300",
+    "co_code": "64005a0064015a016402640384005a026404640584005a03650264066407830201006500650117005a0464085300",
     "co_names": [
         "a",
         "b",
-        "c",
-        "d",
-        "e",
-        "join",
-        "print"
+        "compute",
+        "sum",
+        "c"
     ],
     "co_varnames": [],
     "co_freevars": [],
     "co_cellvars": [],
     "co_consts": [
-        "global",
-        23,
-        50,
-        true,
+        8,
+        2,
         {
-            "co_code": "740072087c007401170074021700530064015300",
+            "co_code": "74007c007c018302740117005300",
             "co_names": [
-                "c",
-                "a",
-                "b"
+                "sum",
+                "a"
             ],
             "co_varnames": [
-                "x"
+                "x",
+                "y"
+            ],
+            "co_freevars": [],
+            "co_cellvars": [],
+            "co_consts": [
+                null
+            ]
+        },
+        "compute",
+        {
+            "co_code": "7c007c011700640117005300",
+            "co_names": [],
+            "co_varnames": [
+                "x",
+                "y"
             ],
             "co_freevars": [],
             "co_cellvars": [],
             "co_consts": [
                 null,
-                -1
+                10
             ]
         },
-        "join",
-        "testing",
+        "sum",
+        10,
+        6,
         null
     ]
 }
