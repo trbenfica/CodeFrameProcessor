@@ -12,7 +12,7 @@
 		    
 // Estruturas e tipos previamente definidos
 class Code;  // Declaração antecipada
-using VarType = std::variant<Code, int, bool, std::string, std::nullptr_t>;
+using VarType = std::variant<Code, int, bool, std::string, std::nullptr_t, float>;
 
 // Função para converter um inteiro de 32 bits para binário e escrevê-lo no fluxo
 void writeBinaryInt32(std::ostream& os, uint32_t value) {
@@ -95,6 +95,8 @@ public:
                     } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
                         std::cout << "null ";
                     } else if constexpr (std::is_integral_v<T>) {
+                        std::cout << val << " ";
+                    } else if constexpr (std::is_floating_point_v<T>) {
                         std::cout << val << " ";
                     } else {
                         std::cout << "\"" << val << "\"" << " ";
@@ -331,6 +333,8 @@ public:
                     result.emplace_back(value); // Adiciona diretamente como string
                 } else if (typeName == "bool") {
                     result.emplace_back(value == "1"); // Converte "1" para true, "0" para false
+                } else if (typeName == "float") {
+                    result.emplace_back(static_cast<float>(static_cast<unsigned char>(value[0])));
                 } else {
                     throw std::runtime_error("Tipo desconhecido no payload");
                 }
@@ -402,6 +406,8 @@ Code readCodeFromJson(const nlohmann::json& jsonData) {
             consts.push_back(item.get<bool>());
         } else if (item.is_null()) {
             consts.push_back(nullptr);
+        } else if (item.is_number_float()) {
+            consts.push_back(item.get<float>());
         } else if (item.is_object()) {
             consts.push_back(readCodeFromJson(item)); // Chamada recursiva
         }
