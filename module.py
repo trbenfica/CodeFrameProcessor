@@ -1,9 +1,13 @@
 
 a = 8
 b = 2
+c = True
 
 def compute(x, y):
-  return sum(x, y) + a
+    if c:
+        return sum(x, y) + a
+    else:
+        return sum(x, y) + a + 10
 
 def sum(x, y):
   return x + y + 10

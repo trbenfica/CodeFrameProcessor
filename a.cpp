@@ -104,6 +104,9 @@ public:
             std::cout << std::endl;
         };
 
+        std::cout << "globals: ";
+        printVector(*globals);
+
         std::cout << "co_names: ";
         printVector(co_names);
 
@@ -346,12 +349,32 @@ public:
         }
 
         // Atualiza os campos com os segmentos decodificados
-        if (segments.size() > 0) co_names = parseVector(segments[0]);
-        if (segments.size() > 1) co_varnames = parseVector(segments[1]);
-        if (segments.size() > 2) co_freevars = parseVector(segments[2]);
-        if (segments.size() > 3) co_cellvars = parseVector(segments[3]);
+        if (segments.size() > 0) *globals = parseVector(segments[0]);
+        if (segments.size() > 1) co_names = parseVector(segments[1]);
+        if (segments.size() > 2) co_varnames = parseVector(segments[2]);
+        if (segments.size() > 3) co_freevars = parseVector(segments[3]);
+        if (segments.size() > 4) co_cellvars = parseVector(segments[4]);
     }
 };
+
+// Gera caso de teste: todos os valores estão abrangidos aqui
+Code generateInputPayloadCases() {
+    std::unordered_map<std::string, Code> inputPayloadCases;
+    int stdSize = 4;
+
+    Code codeObj;
+
+    Code otherCode;
+    // todos arrays > 0, com valores arbitrários 
+    codeObj.setCoNames(std::vector<VarType>{10, 20, "one", otherCode, true});
+    codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", otherCode, true});
+    codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", otherCode, false});
+    codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", otherCode, true});
+
+    codeObj.generatePayload();
+
+    return codeObj;
+}
 
 // Função para ler o JSON e criar o objeto Code
 Code readCodeFromJson(const nlohmann::json& jsonData) {
@@ -455,19 +478,26 @@ std::string readPayloadFromFile(const std::string& filename) {
  *
  * [OK] globals
  * [OK] generatePayload
- * updateFromPayload
- * troca de frames:
- *  - ajustar lógica para arrays em vez de code (?)
- *  - ajustar getCodeFromConsts: code estará numa variável, não em consts
- * 
- * globals deveria ser campo estático da classe?
- * acertar protocolo de comunicação (flags, espera, etc.)
- * como fica MAKE_FUNCTION?
- * testar
- * mostrar formato renato/bruno
+ * [OK] updateFromPayload
+ * ajustar troca de frames
+ * protocolo de comunicação (flags, espera, handshake, etc.)
  *
+ * mostrar formato renato/bruno
+ * 
+ * (questões de projeto...)
+ * preciso manter o bool? parece melhor só deixar zero ou um...
+ * oferecer suporte a float?
  * instruções de OOP?
- * avisar renato que type ocupará 1 byte, e não 3 bits
+ * lançar erro se tamanho do array do payload for maior que do frame original?
+ * 
+ * (escrita...)
+ * reestruturar o que já existe
+ * escrever parte 2 (desenv., testes, conclusão)
+ * escrever docs/apêndice para: serializer.py, handshake (com formato de payload) e CodeFrameProcessor
+ * 
+ * (limitações...)
+ * não atende a funções lambda
+ * não atende floats (?)
  * 
  * */
 
@@ -475,30 +505,33 @@ int main() {
     try {
         Code code = readCodeFromJsonFile("code.json");
         globals = &code.co_names;
-        code.print();
-        // code.generateTestPayload();
-        
 
-        std::cout << std::endl << "____ depois: _____" << std::endl;
-        std::string payload = readPayloadFromFile("input.bin");
+
+        // **** starts here
+
+        // generateInputPayloadCases();
+        code.print();
+        
+        std::cout << std::endl << "____ depois: _____" << std::endl << std::endl;
+        std::string payload = readPayloadFromFile("input_test_payload.bin");
         code.updateFromPayload(payload);
         code.print();
 
         // code.generatePayload();
             
-        CodeNavigator navigator;
-        navigator.push(&code);
+        // CodeNavigator navigator;
+        // navigator.push(&code);
 
-        const Code& newCode = code.getCodeFromConsts(2);
-        navigator.push(&newCode);
-        printf("\n");
+        // const Code& newCode = code.getCodeFromConsts(2);
+        // navigator.push(&newCode);
+        // printf("\n");
 
-        const Code* currentCode = navigator.peek();
+        // const Code* currentCode = navigator.peek();
         // currentCode->print(); 
         printf("\n");
 
-        currentCode = navigator.pop();
-        currentCode = navigator.peek();
+        // currentCode = navigator.pop();
+        // currentCode = navigator.peek();
         // currentCode->print(); 
 
     } catch (const std::exception& e) {
