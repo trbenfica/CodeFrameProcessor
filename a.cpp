@@ -480,33 +480,6 @@ std::string readPayloadFromFile(const std::string& filename) {
 }
 
 
-/* Backlog
- *
- * [OK] globals
- * [OK] generatePayload
- * [OK] updateFromPayload
- * ajustar troca de frames
- * protocolo de comunicação (flags, espera, handshake, etc.)
- *
- * mostrar formato renato/bruno
- * 
- * (questões de projeto...)
- * preciso manter o bool? parece melhor só deixar zero ou um...
- * oferecer suporte a float?
- * instruções de OOP?
- * lançar erro se tamanho do array do payload for maior que do frame original?
- * 
- * (escrita...)
- * reestruturar o que já existe
- * escrever parte 2 (desenv., testes, conclusão)
- * escrever docs/apêndice para: serializer.py, handshake (com formato de payload) e CodeFrameProcessor
- * 
- * (limitações...)
- * não atende a funções lambda
- * não atende floats (?)
- * 
- * */
-
 int main() {
     try {
         Code code = readCodeFromJsonFile("code.json");
