@@ -9,6 +9,8 @@
 #include "include/json.hpp"
 #include <bitset>
 #include <iomanip>
+#include <thread>
+#include <random>
 		    
 // Estruturas e tipos previamente definidos
 class Code;  // Declaração antecipada
@@ -238,7 +240,7 @@ public:
         return result.str();
     }
 
-    std::string generateTestPayload() const {
+    std::string generateInputTestPayload(std::ofstream& outfile) const {
         const char GS = 29;  // ASCII Group Separator
         const char US = 31;  // ASCII Unit Separator
         const char NULL_CHAR = 0;  // ASCII NULL
@@ -294,9 +296,9 @@ public:
 
         // Salva o payload em um arquivo binário
         std::string resultString = result.str();
-        std::ofstream outFile("input.bin", std::ios::binary);
-        if (outFile) {
-            outFile.write(resultString.data(), resultString.size());
+        // std::ofstream outFile("input.bin", std::ios::binary);
+        if (outfile) {
+            outfile.write(resultString.data(), resultString.size());
         } else {
             std::cerr << "Erro ao abrir o arquivo para escrita!" << std::endl;
         }
@@ -375,9 +377,135 @@ Code generateInputPayloadCases() {
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", otherCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", otherCode, true});
 
-    codeObj.generatePayload();
+    // codeObj.generateInputTestPayload();
 
     return codeObj;
+}
+
+void generateMakeFn(std::ofstream& outfile) {
+    // Verificar se o arquivo está aberto
+    if (!outfile.is_open()) {
+        throw std::runtime_error("Arquivo não está aberto para escrita.");
+    }
+
+    // Byte fixo inicial
+    uint8_t fixedByte = 0x84;
+
+    // Gerar três inteiros aleatórios no intervalo de 0 a 4
+    std::random_device rd; // Fonte de entropia
+    std::mt19937 gen(rd()); // Gerador Mersenne Twister
+    std::uniform_int_distribution<int> dist(0, 4); // Intervalo [0, 4]
+
+    uint32_t randomInt1 = static_cast<uint32_t>(dist(gen));
+    uint32_t randomInt2 = static_cast<uint32_t>(dist(gen));
+    uint32_t randomInt3 = static_cast<uint32_t>(dist(gen));
+
+    // Escrever os bytes no arquivo
+    outfile.write(reinterpret_cast<const char*>(&fixedByte), sizeof(fixedByte));
+    outfile.write(reinterpret_cast<const char*>(&randomInt1), sizeof(randomInt1));
+    outfile.write(reinterpret_cast<const char*>(&randomInt2), sizeof(randomInt2));
+    outfile.write(reinterpret_cast<const char*>(&randomInt3), sizeof(randomInt3));
+}
+
+void generateReturn(std::ofstream& outfile) {
+    // Verificar se o arquivo está aberto
+    if (!outfile.is_open()) {
+        throw std::runtime_error("Arquivo não está aberto para escrita.");
+    }
+
+    // Valor fixo a ser escrito
+    uint8_t returnValue = 0x53;
+
+    // Escrever o valor no arquivo
+    outfile.write(reinterpret_cast<const char*>(&returnValue), sizeof(returnValue));
+}
+
+// Função para gerar inteiros aleatórios
+int generateRandomInt(int min = 1, int max = 100) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(min, max);
+    return dist(gen);
+}
+
+// Função para gerar strings aleatórias
+std::string generateRandomString(size_t length = 5) {
+    static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<int> dist(0, sizeof(charset) - 2);
+
+    std::string result;
+    result.reserve(length);
+    for (size_t i = 0; i < length; ++i) {
+        result += charset[dist(gen)];
+    }
+    return result;
+}
+
+// Função para encapsular a lógica com geração aleatória
+void generateCodeWithRandomPayload(std::ofstream& outfile) {
+    std::unordered_map<std::string, Code> inputPayloadCases;
+    Code codeObj;
+    Code otherCode; // Mantido fixo conforme pedido
+
+    // Vetor para armazenar os valores gerados
+    auto generateRandomValues = [&]() -> std::vector<VarType> {
+        return {
+            generateRandomInt(1, 100),                    // Número aleatório
+            generateRandomInt(1, 100),                    // Número aleatório
+            generateRandomString(5),                      // String curta aleatória
+            otherCode,                                    // Objeto fixo
+            static_cast<bool>(generateRandomInt(0, 1))    // Valor booleano aleatório
+        };
+    };
+
+    // Configurar os campos com valores aleatórios
+    codeObj.setCoNames(generateRandomValues());
+    codeObj.setCoVarnames(generateRandomValues());
+    codeObj.setCoFreevars(generateRandomValues());
+    codeObj.setCoCellvars(generateRandomValues());
+
+    // Gerar o payload de teste
+    codeObj.generateInputTestPayload(outfile);
+}
+
+void generateFinalInputTest() {
+    // Nome do arquivo binário a ser criado
+    const char* filename = "master_instructions.bin";
+
+    // Abre o arquivo em modo binário
+    std::ofstream outfile(filename, std::ios::binary);
+    if (!outfile) {
+        throw std::runtime_error("Erro ao abrir o arquivo para escrita!");
+    }
+
+    char INIT = 0x02;
+    outfile.write(&INIT, sizeof(INIT));
+    
+    // gera make_functions
+    generateMakeFn(outfile);
+    generateMakeFn(outfile);
+    generateMakeFn(outfile);
+
+    // gera call_functions
+    generateCodeWithRandomPayload(outfile);
+    generateCodeWithRandomPayload(outfile);
+    generateCodeWithRandomPayload(outfile);
+
+    // gera returns
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+
+
+    // Fechar o arquivo
+    outfile.close();
+    if (!outfile.good()) {
+        throw std::runtime_error("Erro ao escrever no arquivo!");
+    }
+
+    std::cout << "Arquivo binário criado com sucesso!" << std::endl;
 }
 
 // Função para ler o JSON e criar o objeto Code
@@ -484,18 +612,57 @@ int main() {
     try {
         Code code = readCodeFromJsonFile("code.json");
         globals = &code.co_names;
+        const std::string ENQ = "ENQ";
+        const std::string ACK = "ACK";
 
 
         // **** starts here
 
-        // generateInputPayloadCases();
-        code.print();
-        
-        std::cout << std::endl << "____ depois: _____" << std::endl << std::endl;
-        std::string payload = readPayloadFromFile("input_test_payload.bin");
-        code.updateFromPayload(payload);
-        code.print();
+        // std::ifstream inputFile("instrucoes.txt");
+        // if (!inputFile.is_open()) {
+        //     std::cerr << "Erro ao abrir o arquivo de instruções.\n";
+        //     return 1;
+        // }
 
+        // std::cout << "Escravo iniciado. Aguardando instruções...\n";
+
+        /*
+            * INITIALIZE: 0x0
+            * MAKE_FUNCTION: 0x84
+            * CALL_FUNCTION: 0x83
+            * RETURN_VALUE: 0x53
+        */
+
+        // std::string line;
+        // while (true) {
+        //     inputFile.clear();
+        //     inputFile.seekg(0, std::ios::beg);
+
+        //     std::getline(inputFile, line);
+        //     if (line == ENQ) {
+        //         std::cout << "Sinal ENQ recebido.\n";
+        //         std::cout << "Enviando ACK...\n";
+        //         std::getline(inputFile, line);
+        //         if (line == "0x84") {
+        //             std::cout << "Executando tarefa 1...\n";
+        //         } else if (line == "0x02") {
+        //             std::cout << "Executando tarefa 2...\n";
+        //         } else if (line == "0x03") {
+        //             std::cout << "Executando tarefa 3...\n";
+        //         } else {
+        //             std::cout << "Comando desconhecido: " << line << '\n';
+        //         }
+        //     }
+
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Pausa para evitar loop contínuo
+        // }
+
+        // inputFile.close();
+        // std::cout << "Processo finalizado.\n";
+
+        // generateInputPayloadCases();
+        // std::string payload = readPayloadFromFile("input_test_payload.bin");
+        // code.updateFromPayload(payload);
         // code.generatePayload();
             
         // CodeNavigator navigator;
@@ -507,7 +674,6 @@ int main() {
 
         // const Code* currentCode = navigator.peek();
         // currentCode->print(); 
-        printf("\n");
 
         // currentCode = navigator.pop();
         // currentCode = navigator.peek();

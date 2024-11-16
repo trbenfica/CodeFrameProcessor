@@ -62,6 +62,9 @@
     "typeinfo": "cpp",
     "valarray": "cpp",
     "variant": "cpp",
-    "bitset": "cpp"
+    "bitset": "cpp",
+    "semaphore": "cpp",
+    "stop_token": "cpp",
+    "thread": "cpp"
   }
 }
