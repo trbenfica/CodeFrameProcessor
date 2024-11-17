@@ -5,16 +5,9 @@
       "label": "build",
       "type": "shell",
       "command": "g++",
-      "args": [
-        "-g",
-        "main.cpp",
-        "-o",
-        "main"
-      ],
+      "args": ["-g", "main.cpp", "Code.cpp", "-o", "main"],
       "group": "build",
-      "problemMatcher": [
-        "$gcc"
-      ]
+      "problemMatcher": ["$gcc"]
     },
     {
       "type": "cppbuild",
@@ -30,9 +23,7 @@
       "options": {
         "cwd": "${fileDirname}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": ["$gcc"],
       "group": "build",
       "detail": "compilador: /usr/bin/gcc"
     },
@@ -44,15 +35,14 @@
         "-fdiagnostics-color=always",
         "-g",
         "${file}",
+        "Code.cpp",
         "-o",
         "${fileDirname}/${fileBasenameNoExtension}"
       ],
       "options": {
         "cwd": "${fileDirname}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": ["$gcc"],
       "group": {
         "kind": "build",
         "isDefault": true
