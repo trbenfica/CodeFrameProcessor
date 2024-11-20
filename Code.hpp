@@ -57,7 +57,7 @@ public:
     void print() const;
 
     // Acessar objetos Code aninhados
-    const Code& getCodeFromVariable(size_t vector, size_t index) const;
+    Code& getCodeFromVariable(size_t vector, size_t index);
 
     // Modificações do master
     void processMakeFn(int constsIndex, int dstVector, int dstIndexVector);

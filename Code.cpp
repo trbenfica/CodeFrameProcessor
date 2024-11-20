@@ -106,7 +106,7 @@ void Code::print() const {
 }
 
 // Método para acessar um objeto Code aninhado
-const Code& Code::getCodeFromVariable(size_t vector, size_t index) const {
+Code& Code::getCodeFromVariable(size_t vector, size_t index) {
     if (index >= co_consts.size()) {
         throw std::out_of_range("Index out of range for co_consts");
     }

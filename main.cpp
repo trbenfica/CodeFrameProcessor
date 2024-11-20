@@ -66,26 +66,26 @@ Code readCodeFromJsonFile(const std::string& filename) {
 // Pilha para gerenciar a navegação entre os objetos Code
 class CodeNavigator {
 private:
-    std::stack<const Code*> navigationStack;
+    std::stack<Code*> navigationStack;
 
 public:
     // Adiciona um novo objeto Code à pilha
-    void push(const Code* code) {
+    void push(Code* code) {
         navigationStack.push(code);
     }
 
     // Retorna o objeto Code no topo da pilha
-    const Code* pop() {
+    Code* pop() {
         if (navigationStack.empty()) {
             throw std::runtime_error("Navigation stack is empty.");
         }
-        const Code* top = navigationStack.top();
+        Code* top = navigationStack.top();
         navigationStack.pop();
         return top;
     }
 
     // Retorna o objeto Code no topo da pilha sem removê-lo
-    const Code* peek() const {
+    Code* peek() {
         if (navigationStack.empty()) {
             throw std::runtime_error("Navigation stack is empty.");
         }
@@ -186,6 +186,7 @@ int main(int argc, char* argv[]) {
         CodeNavigator navigator;
         navigator.push(&code);
 
+        Code* currCode = &code;
         for (const auto& segment : segments) {
             if (segment.empty()) {
                 continue;
@@ -202,28 +203,32 @@ int main(int argc, char* argv[]) {
             // }
             // std::cout << std::dec << std::endl;
 
+
             if(instruction == 0x83) {
                 std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (CALL_FUNCTION)" << std::endl;
                 std::vector<uint8_t> args(segment.begin() + 1, segment.begin() + 3);
                 std::vector<uint8_t> payload(segment.begin() + 4, segment.end());
                 std::string payloadString(payload.begin(), payload.end());
-                code.updateFromPayload(payloadString);
-                navigator.push(&code.getCodeFromVariable(args[0], args[1]));
-                code = *(navigator.peek());
-                printBinaryString(code.generatePayload());
+
+                currCode->updateFromPayload(payloadString);
+                if(DEBUG) std::cout << "updated current frame from payload..." << std::endl;
+
+                navigator.push(&currCode->getCodeFromVariable(args[0], args[1]));
+                currCode = navigator.peek();
+                // printBinaryString(currCode->generatePayload());
             } else if(instruction == 0x84) {
                 std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (MAKE_FUNCTION)" << std::endl;
-                code.processMakeFn(payload[0], payload[1], payload[2]);
+                currCode->processMakeFn(payload[0], payload[1], payload[2]);
             } else if(instruction == 0x53) {
                 std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (RETURN)" << std::endl;
                 navigator.pop();
-                code = *(navigator.peek());
-                printBinaryString(code.generatePayload());
+                currCode = navigator.peek();
+                // printBinaryString(currCode->generatePayload());
             } else {
                 throw std::runtime_error("Instrução desconhecida");
             }
 
-            if(DEBUG) code.print();
+            if(DEBUG) currCode->print();
             std::cout << std::endl << std::endl;
         }
     } catch (const std::exception& e) {
