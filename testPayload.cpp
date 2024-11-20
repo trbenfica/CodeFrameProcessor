@@ -3,7 +3,15 @@
 
 uint8_t recordSeparator[2] = {0x03, 0x02};
 
-void generateCallFn(std::ofstream& outfile, Code& codeObj) {  
+/**
+ * Esta função gera uma instrução de CALL_FUNCTION no fluxo.
+ * 
+ * @param outfile O arquivo de saída onde a função será escrita.
+ * @param codeObj é o objeto Code a ser convertido.
+ * @param dstVector Vetor de destino.
+ * @param dstIndexVector Índice do vetor de destino.
+ */
+void generateCallFn(std::ofstream& outfile, Code& codeObj, uint8_t dstVector, uint8_t dstIndexVector) {
     if (!outfile.is_open()) {
         throw std::runtime_error("Arquivo não está aberto para escrita.");
     }
@@ -13,6 +21,8 @@ void generateCallFn(std::ofstream& outfile, Code& codeObj) {
     std::string serializedStr = codeObj.generateInputTestPayload();
 
     outfile.write(reinterpret_cast<const char*>(&fixedByte), sizeof(fixedByte));
+    outfile.write(reinterpret_cast<const char*>(&dstVector), sizeof(dstVector));
+    outfile.write(reinterpret_cast<const char*>(&dstIndexVector), sizeof(dstIndexVector));
     outfile.write(reinterpret_cast<const char*>(serializedStr.data()), serializedStr.size());
     outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
 }
@@ -68,8 +78,8 @@ int main() {
     outfile.write(&INIT, sizeof(INIT));
     
     // primeiro frame
-    generateMakeFn(outfile, 1, 2, 3);
-    generateMakeFn(outfile, 1, 2, 3);
+    generateMakeFn(outfile, 1, 0, 3);
+    generateMakeFn(outfile, 2, 1, 3);
 
     Code codeObj, childCode;
 
@@ -78,7 +88,7 @@ int main() {
     codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
-    generateCallFn(outfile, codeObj);
+    generateCallFn(outfile, codeObj, 0, 3);
 
     // segundo frame
     // generateMakeFn(outfile, 1, 2, 3);
@@ -110,8 +120,8 @@ int main() {
     // codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
     // generateCallFn(outfile, codeObj);
 
-    // // retorna ao original
-    // generateReturn(outfile);
+    // retorna ao original
+    generateReturn(outfile);
     // generateReturn(outfile);
     // generateReturn(outfile);
     // generateReturn(outfile);

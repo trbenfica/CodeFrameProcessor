@@ -106,7 +106,7 @@ void Code::print() const {
 }
 
 // Método para acessar um objeto Code aninhado
-const Code& Code::getCodeFromConsts(size_t index) const {
+const Code& Code::getCodeFromVariable(size_t vector, size_t index) const {
     if (index >= co_consts.size()) {
         throw std::out_of_range("Index out of range for co_consts");
     }
@@ -332,3 +332,36 @@ std::string Code::generateInputTestPayload() const {
 
     return result.str();
 }
+
+void Code::processMakeFn(int constsIndex, int dstVector, int dstIndexVector) {
+    std::vector<VarType>* targetVector = nullptr;
+
+    switch (dstVector) {
+        case 0:
+            targetVector = &Code::globals;
+            break;
+        case 1:
+            targetVector = &co_names;
+            break;
+        case 2:
+            targetVector = &co_varnames;
+            break;
+        case 3:
+            targetVector = &co_freevars;
+            break;
+        case 4:
+            targetVector = &co_cellvars;
+            break;
+        default:
+            throw std::invalid_argument("Invalid dstVector value.");
+    }
+
+    if (dstIndexVector < 0 || dstIndexVector >= targetVector->size()) {
+        std::ostringstream errorMessage;
+        errorMessage << "Index out of range: dstVector " << dstVector << " tried to acess " << dstIndexVector << " position";
+        throw std::out_of_range(errorMessage.str());
+    }
+
+    (*targetVector)[dstIndexVector] = VarType(constsIndex);
+}
+

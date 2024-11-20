@@ -57,7 +57,10 @@ public:
     void print() const;
 
     // Acessar objetos Code aninhados
-    const Code& getCodeFromConsts(size_t index) const;
+    const Code& getCodeFromVariable(size_t vector, size_t index) const;
+
+    // Modificações do master
+    void processMakeFn(int constsIndex, int dstVector, int dstIndexVector);
 
     // Geração de payloads
     std::string generatePayload() const;
