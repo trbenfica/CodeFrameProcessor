@@ -9,8 +9,6 @@
 #include "include/json.hpp"
 #include <bitset>
 #include <iomanip>
-#include <thread>
-#include <random>
 #include "Code.hpp"
 
 
@@ -138,21 +136,20 @@ std::vector<std::vector<uint8_t>> splitByDelimiters(const std::vector<uint8_t>& 
 }
 
 void printBinaryString(const std::string& binaryString) {
+    std::cout << "\033[36m" << "Payload generated:" << std::endl;
+
     for (unsigned char c : binaryString) {
-        // Exibe cada byte como dois dígitos hexadecimais
         std::cout << std::hex << std::setfill('0') << std::setw(2) 
                   << static_cast<int>(c) << " ";
     }
-    std::cout << std::dec << std::endl; // Retorna o manipulador para decimal
+    std::cout << std::dec << "\033[0m" << std::endl; // Retorna o manipulador para decimal
 }
 
-
 int main(int argc, char* argv[]) {
-    bool DEBUG = true;
+    bool DEBUG = false;
 
     if (argc > 1 && std::string(argv[1]) == "-d") {
-        std::cout << "\033[32mManager started on Debugger Mode...\033[0m" << std::endl;
-        std::cout << "TESTETETET";
+        std::cout << "\n\033[32mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
         DEBUG = true;
     }
 
@@ -196,34 +193,25 @@ int main(int argc, char* argv[]) {
             uint8_t instruction = segment[0];
             std::vector<uint8_t> payload(segment.begin() + 1, segment.end());
 
-            // Print the results for demonstration
-            // std::cout << "Payload: ";
-            // for (uint8_t byte : payload) {
-            //     std::cout << "0x" << std::hex << static_cast<int>(byte) << " ";
-            // }
-            // std::cout << std::dec << std::endl;
-
-
             if(instruction == 0x83) {
-                std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (CALL_FUNCTION)" << std::endl;
+                if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (CALL_FUNCTION)" << std::endl;
                 std::vector<uint8_t> args(segment.begin() + 1, segment.begin() + 3);
                 std::vector<uint8_t> payload(segment.begin() + 4, segment.end());
                 std::string payloadString(payload.begin(), payload.end());
 
                 currCode->updateFromPayload(payloadString);
-                if(DEBUG) std::cout << "updated current frame from payload..." << std::endl;
+                if(DEBUG) std::cout << "updated current frame from received payload..." << std::endl;
 
                 navigator.push(&currCode->getCodeFromVariable(args[0], args[1]));
                 currCode = navigator.peek();
-                // printBinaryString(currCode->generatePayload());
+                if(DEBUG) printBinaryString(currCode->generatePayload());
             } else if(instruction == 0x84) {
-                std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (MAKE_FUNCTION)" << std::endl;
+                if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (MAKE_FUNCTION)" << std::endl;
                 currCode->processMakeFn(payload[0], payload[1], payload[2]);
             } else if(instruction == 0x53) {
-                std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (RETURN)" << std::endl;
+                if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (RETURN)" << std::endl;
                 navigator.pop();
                 currCode = navigator.peek();
-                // printBinaryString(currCode->generatePayload());
             } else {
                 throw std::runtime_error("Instrução desconhecida");
             }
