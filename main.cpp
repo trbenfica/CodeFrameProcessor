@@ -117,7 +117,7 @@ std::vector<std::vector<uint8_t>> splitByDelimiters(const std::vector<uint8_t>& 
 
     for (size_t i = 1; i < data.size(); ++i) {
         if (i + 1 < data.size() && data[i] == delimiter1 && data[i + 1] == delimiter2) {
-            // Found the delimiters (0x03 followed by 0x02), save the current segment
+            // Encontrei os delimitadores (0x03 seguido de 0x02), salvei o segmento atual
             if (!currentSegment.empty()) {
                 result.push_back(currentSegment);
                 currentSegment.clear();
@@ -127,7 +127,7 @@ std::vector<std::vector<uint8_t>> splitByDelimiters(const std::vector<uint8_t>& 
             currentSegment.push_back(data[i]);
         }
     }
-    // Add the last segment if it exists
+    // Adiciono o último segmento, se existir
     if (!currentSegment.empty()) {
         result.push_back(currentSegment);
     }
