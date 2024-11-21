@@ -78,12 +78,12 @@ int main() {
     outfile.write(&INIT, sizeof(INIT));
     
     // primeiro frame
-    generateMakeFn(outfile, 1, 0, 3);
-    generateMakeFn(outfile, 2, 1, 3);
+    generateMakeFn(outfile, 3, 0, 3);
+    generateMakeFn(outfile, 5, 1, 3);
 
     Code codeObj, childCode;
 
-    codeObj.setCoNames(std::vector<VarType>{"one"});
+    Code::globals = {50};
     codeObj.setCoNames(std::vector<VarType>{10});
     codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});

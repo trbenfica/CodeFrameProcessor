@@ -9,8 +9,6 @@
 #include "include/json.hpp"
 #include <bitset>
 #include <iomanip>
-#include <thread>
-#include <random>
 #include "Code.hpp"
 
 const std::unordered_map<std::string, std::string> PayloadType::typeMap = {
@@ -238,7 +236,6 @@ void Code::updateFromPayload(const std::string& payload) {
             std::string typeName = PayloadType::codeMap.at(typeBits);
             
             if (typeName == "Code") {
-                // std::cout << "code"
                 result.emplace_back(nullptr); // Insere um objeto Code vazio (ou implemente um código de deserialização)
             } else if (typeName == "nullptr_t") {
                 result.emplace_back(nullptr); // Insere um nullptr
@@ -324,6 +321,7 @@ std::string Code::generateInputTestPayload() const {
     };
 
     // Concatena cada campo formatado com GS entre eles
+    result << GS;
     result << formatVector(Code::globals) << GS;
     result << formatVector(co_names) << GS;
     result << formatVector(co_varnames) << GS;
@@ -335,6 +333,11 @@ std::string Code::generateInputTestPayload() const {
 
 void Code::processMakeFn(int constsIndex, int dstVector, int dstIndexVector) {
     std::vector<VarType>* targetVector = nullptr;
+     if (!std::holds_alternative<Code>(co_consts[constsIndex])) {
+        std::ostringstream errorMessage;
+        errorMessage << "Code::processMakeFn -> o elemento na posição " << constsIndex << " de co_consts não é um objeto Code.";
+        throw std::out_of_range(errorMessage.str());
+    }
 
     switch (dstVector) {
         case 0:
@@ -361,6 +364,7 @@ void Code::processMakeFn(int constsIndex, int dstVector, int dstIndexVector) {
         errorMessage << "Index out of range: dstVector " << dstVector << " tried to acess " << dstIndexVector << " position";
         throw std::out_of_range(errorMessage.str());
     }
+
 
     (*targetVector)[dstIndexVector] = VarType(constsIndex);
 }
