@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
     bool DEBUG = false;
 
     if (argc > 1 && std::string(argv[1]) == "-d") {
-        std::cout << "\n\033[32mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
+        std::cout << "\n\033[33mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
         DEBUG = true;
     }
 
@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
                 navigator.pop();
                 currCode = navigator.peek();
             } else if(instruction == 0x02) {
-                if(DEBUG) std::cout << "--> Received START signal, sending first frame:" << std::endl;
+                if(DEBUG) std::cout << "\033[32m--> Received START signal, sending first frame:\033[0m" << std::endl;
             } else {
                 throw std::runtime_error("Instrução desconhecida");
             }

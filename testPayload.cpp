@@ -48,6 +48,7 @@ int main() {
         throw std::runtime_error("Erro ao abrir o arquivo para escrita!");
     }
 
+    // Insere instrução de START
     char INIT = 0x02;
     outfile.write(&INIT, sizeof(INIT));
     outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
@@ -63,29 +64,20 @@ int main() {
     generateCallFn(outfile, codeObj, 2, 1);
 
     // segundo frame
-    // generateMakeFn(outfile, 1, 2, 3);
-    // generateMakeFn(outfile, 1, 2, 3);
-
     // codeObj.setCoNames(std::vector<VarType>{10, 20, "one", childCode, true});
     // codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
     // codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     // codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
     // generateCallFn(outfile, codeObj);
 
-    // // terceiro frame
-    // generateMakeFn(outfile, 1, 2, 3);
-    // generateMakeFn(outfile, 1, 2, 3);
-
+    // terceiro frame
     // codeObj.setCoNames(std::vector<VarType>{10, 20, "one", childCode, true});
     // codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
     // codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     // codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
     // generateCallFn(outfile, codeObj);
 
-    // // quarto frame
-    // generateMakeFn(outfile, 1, 2, 3);
-    // generateMakeFn(outfile, 1, 2, 3);
-
+    // quarto frame
     // codeObj.setCoNames(std::vector<VarType>{10, 20, "one", childCode, true});
     // codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
     // codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
