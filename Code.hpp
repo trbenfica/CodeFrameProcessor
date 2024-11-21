@@ -59,9 +59,6 @@ public:
     // Acessar objetos Code aninhados
     Code& getCodeFromVariable(size_t vector, size_t index);
 
-    // Modificações do master
-    void processMakeFn(int constsIndex, int dstVector, int dstIndexVector);
-
     // Geração de payloads
     std::string generatePayload() const;
     std::string generateInputTestPayload() const;

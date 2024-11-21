@@ -115,7 +115,7 @@ std::vector<std::vector<uint8_t>> splitByDelimiters(const std::vector<uint8_t>& 
     std::vector<std::vector<uint8_t>> result;
     std::vector<uint8_t> currentSegment;
 
-    for (size_t i = 1; i < data.size(); ++i) {
+    for (size_t i = 0; i < data.size(); ++i) {
         if (i + 1 < data.size() && data[i] == delimiter1 && data[i + 1] == delimiter2) {
             // Encontrei os delimitadores (0x03 seguido de 0x02), salvei o segmento atual
             if (!currentSegment.empty()) {
@@ -159,8 +159,6 @@ int main(int argc, char* argv[]) {
         const std::string ENQ = "ENQ";
         const std::string ACK = "ACK";
 
-        // **** starts here
-
         const char* filename = "master_instructions.bin";
         std::ifstream file(filename, std::ios::binary);
 
@@ -177,7 +175,6 @@ int main(int argc, char* argv[]) {
             * INITIALIZE: 0x02
             * RETURN_VALUE: 0x53
             * CALL_FUNCTION: 0x83
-            * MAKE_FUNCTION: 0x84
         */
 
         CodeNavigator navigator;
@@ -205,13 +202,12 @@ int main(int argc, char* argv[]) {
                 navigator.push(&currCode->getCodeFromVariable(args[0], args[1]));
                 currCode = navigator.peek();
                 if(DEBUG) printBinaryString(currCode->generatePayload());
-            } else if(instruction == 0x84) {
-                if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (MAKE_FUNCTION)" << std::endl;
-                currCode->processMakeFn(payload[0], payload[1], payload[2]);
             } else if(instruction == 0x53) {
                 if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (RETURN)" << std::endl;
                 navigator.pop();
                 currCode = navigator.peek();
+            } else if(instruction == 0x02) {
+                if(DEBUG) std::cout << "--> Received START signal, sending first frame:" << std::endl;
             } else {
                 throw std::runtime_error("Instrução desconhecida");
             }

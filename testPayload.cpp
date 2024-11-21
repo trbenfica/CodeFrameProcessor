@@ -27,32 +27,6 @@ void generateCallFn(std::ofstream& outfile, Code& codeObj, uint8_t dstVector, ui
     outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
 }
 
-/**
- * Esta função gera uma instrução de MAKE_FUNCTION no fluxo.
- * 
- * @param outfile O arquivo de saída onde a função será escrita.
- * @param constsIndex Índice do vetor de constantes.
- * @param dstVector Vetor de destino.
- * @param dstIndexVector Índice do vetor de destino.
- */
-void generateMakeFn(std::ofstream& outfile, int constsIndex, int dstVector, int dstIndexVector) {  
-    if (!outfile.is_open()) {
-        throw std::runtime_error("Arquivo não está aberto para escrita.");
-    }
-
-    uint8_t fixedByte = 0x84;
-
-    uint8_t value1 = static_cast<uint8_t>(constsIndex);
-    uint8_t value2 = static_cast<uint8_t>(dstVector);
-    uint8_t value3 = static_cast<uint8_t>(dstIndexVector);
-
-    outfile.write(reinterpret_cast<const char*>(&fixedByte), sizeof(fixedByte));
-    outfile.write(reinterpret_cast<const char*>(&value1), sizeof(value1));
-    outfile.write(reinterpret_cast<const char*>(&value2), sizeof(value2));
-    outfile.write(reinterpret_cast<const char*>(&value3), sizeof(value3));
-    outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
-}
-
 void generateReturn(std::ofstream& outfile) {
     if (!outfile.is_open()) {
         throw std::runtime_error("Arquivo não está aberto para escrita.");
@@ -76,19 +50,17 @@ int main() {
 
     char INIT = 0x02;
     outfile.write(&INIT, sizeof(INIT));
+    outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
     
     // primeiro frame
-    generateMakeFn(outfile, 2, 0, 3);
-    generateMakeFn(outfile, 4, 1, 3);
-
     Code codeObj, childCode;
 
     Code::globals = {50};
     codeObj.setCoNames(std::vector<VarType>{10});
-    codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
+    codeObj.setCoVarnames(std::vector<VarType>{30, 2, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
-    generateCallFn(outfile, codeObj, 2, 3);
+    generateCallFn(outfile, codeObj, 2, 1);
 
     // segundo frame
     // generateMakeFn(outfile, 1, 2, 3);
