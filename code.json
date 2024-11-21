@@ -1,11 +1,12 @@
 {
-    "co_code": "64005a0064015a0164025a026403640484005a036405640684005a04650364076408830201006500650117005a0264095300",
+    "co_code": "64005a0064015a016402640384005a026404640584005a036406640784005a04650264086409830201006500650117005a05640a5300",
     "co_names": [
         "a",
         "b",
-        "c",
-        "compute",
-        "sum"
+        "first_sum",
+        "second_sum",
+        "third_sum",
+        "c"
     ],
     "co_varnames": [],
     "co_freevars": [],
@@ -13,13 +14,10 @@
     "co_consts": [
         8,
         2,
-        true,
         {
-            "co_code": "7400720974017c007c01830274021700530074017c007c01830274021700640117005300",
+            "co_code": "74007c007c0183025300",
             "co_names": [
-                "c",
-                "sum",
-                "a"
+                "second_sum"
             ],
             "co_varnames": [
                 "x",
@@ -28,13 +26,28 @@
             "co_freevars": [],
             "co_cellvars": [],
             "co_consts": [
-                null,
-                10
+                null
             ]
         },
-        "compute",
+        "first_sum",
         {
-            "co_code": "7c007c011700640117005300",
+            "co_code": "74007c007c0183025300",
+            "co_names": [
+                "third_sum"
+            ],
+            "co_varnames": [
+                "x",
+                "y"
+            ],
+            "co_freevars": [],
+            "co_cellvars": [],
+            "co_consts": [
+                null
+            ]
+        },
+        "second_sum",
+        {
+            "co_code": "7c007c0114005300",
             "co_names": [],
             "co_varnames": [
                 "x",
@@ -43,11 +56,10 @@
             "co_freevars": [],
             "co_cellvars": [],
             "co_consts": [
-                null,
-                10
+                null
             ]
         },
-        "sum",
+        "third_sum",
         10,
         6,
         null

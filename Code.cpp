@@ -109,13 +109,49 @@ Code& Code::getCodeFromVariable(size_t vector, size_t index) {
         throw std::out_of_range("Index out of range for co_consts");
     }
 
-    // Verifica se o elemento no índice é do tipo Code
-    if (std::holds_alternative<Code>(co_consts[index])) {
-        return std::get<Code>(co_consts[index]); // Retorna a referência ao objeto Code
+    std::vector<VarType>* targetVector = nullptr;
+
+    switch (vector) {
+        case 0:
+            targetVector = &Code::globals;
+            break;
+        case 1:
+            targetVector = &co_names;
+            break;
+        case 2:
+            targetVector = &co_varnames;
+            break;
+        case 3:
+            targetVector = &co_freevars;
+            break;
+        case 4:
+            targetVector = &co_cellvars;
+            break;
+        default:
+            throw std::invalid_argument("Invalid dstVector value.");
+    }
+
+    // Verifica se o índice está dentro dos limites do vetor
+    if (index >= targetVector->size()) {
+        throw std::out_of_range("Index out of range for targetVector");
+    }
+
+    // Verifica se o elemento no índice é do tipo int
+    if (!std::holds_alternative<int>((*targetVector)[index])) {
+        throw std::runtime_error("Code::getCodeFromVariable -> elemento no índice não é um int");
+    }
+
+    // Recupera o índice do elemento em co_consts
+    int constsIndex = std::get<int>((*targetVector)[index]);
+
+    // Verifica se o elemento em constsIndex é do tipo Code
+    if (std::holds_alternative<Code>(co_consts[constsIndex])) {
+        return std::get<Code>(co_consts[constsIndex]); // Retorna a referência ao objeto Code
     } else {
         throw std::runtime_error("Tentativa de acesso a Code filho, porém o index não é de um objeto Code");
     }
 }
+
     
 std::string Code::generatePayload() const {
     const char GS = 29;  // ASCII Group Separator

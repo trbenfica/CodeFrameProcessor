@@ -1,19 +1,16 @@
 
 a = 8
 b = 2
-c = True
 
-def compute(x, y):
-    if c:
-        return sum(x, y) + a
-    else:
-        return sum(x, y) + a + 10
+def first_sum(x, y):
+    return second_sum(x, y)
+    
+def second_sum(x, y):
+  return third_sum(x, y)
 
-def sum(x, y):
-  return x + y + 10
+def third_sum(x, y):
+    return x * y
 
-compute(10, 6)
-
-
+first_sum(10, 6)
 
 c = a + b

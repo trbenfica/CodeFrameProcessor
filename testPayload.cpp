@@ -78,8 +78,8 @@ int main() {
     outfile.write(&INIT, sizeof(INIT));
     
     // primeiro frame
-    generateMakeFn(outfile, 3, 0, 3);
-    generateMakeFn(outfile, 5, 1, 3);
+    generateMakeFn(outfile, 2, 0, 3);
+    generateMakeFn(outfile, 4, 1, 3);
 
     Code codeObj, childCode;
 
@@ -88,7 +88,7 @@ int main() {
     codeObj.setCoVarnames(std::vector<VarType>{30, 40, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
-    generateCallFn(outfile, codeObj, 0, 3);
+    generateCallFn(outfile, codeObj, 2, 3);
 
     // segundo frame
     // generateMakeFn(outfile, 1, 2, 3);
