@@ -62,7 +62,7 @@ void Code::setCoCellvars(const std::vector<VarType>& cellvars) { co_cellvars = c
 void Code::setCoConsts(const std::vector<VarType>& consts) { co_consts = consts; }
 
 void Code::print() const {
-    std::cout << "co_code: " << co_code << std::endl;
+    std::cout << std::endl << "co_code: " << co_code << std::endl;
 
     auto printVector = [](const std::vector<VarType>& vec) {
         for (const auto& item : vec) {

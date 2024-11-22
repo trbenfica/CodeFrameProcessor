@@ -135,8 +135,18 @@ std::vector<std::vector<uint8_t>> splitByDelimiters(const std::vector<uint8_t>& 
     return result;
 }
 
+void printGreetings() {
+    std::cout << std::endl << "Welcome to... \033[36m" << std::endl;
+    std::cout <<   " ▗▄▄▖ ▗▄▖ ▗▄▄▄ ▗▄▄▄▖    ▗▄▄▄▖▗▄▄▖  ▗▄▖ ▗▖  ▗▖▗▄▄▄▖    ▗▄▄▖ ▗▄▄▖  ▗▄▖  ▗▄▄▖▗▄▄▄▖ ▗▄▄▖ ▗▄▄▖ ▗▄▖ ▗▄▄▖ " << std::endl;
+    std::cout <<   "▐▌   ▐▌ ▐▌▐▌  █▐▌       ▐▌   ▐▌ ▐▌▐▌ ▐▌▐▛▚▞▜▌▐▌       ▐▌ ▐▌▐▌ ▐▌▐▌ ▐▌▐▌   ▐▌   ▐▌   ▐▌   ▐▌ ▐▌▐▌ ▐▌" << std::endl;
+    std::cout <<   "▐▌   ▐▌ ▐▌▐▌  █▐▛▀▀▘    ▐▛▀▀▘▐▛▀▚▖▐▛▀▜▌▐▌  ▐▌▐▛▀▀▘    ▐▛▀▘ ▐▛▀▚▖▐▌ ▐▌▐▌   ▐▛▀▀▘ ▝▀▚▖ ▝▀▚▖▐▌ ▐▌▐▛▀▚▖" << std::endl;
+    std::cout <<   "▝▚▄▄▖▝▚▄▞▘▐▙▄▄▀▐▙▄▄▖    ▐▌   ▐▌ ▐▌▐▌ ▐▌▐▌  ▐▌▐▙▄▄▖    ▐▌   ▐▌ ▐▌▝▚▄▞▘▝▚▄▄▖▐▙▄▄▖▗▄▄▞▘▗▄▄▞▘▝▚▄▞▘▐▌ ▐▌" << std::endl;
+    std::cout <<   "" << std::endl;
+    std::cout << "" << std::endl << "\033[0m";                                                                                                    
+}
+
 void printBinaryString(const std::string& binaryString) {
-    std::cout << "\033[36m" << "Payload generated:" << std::endl;
+    std::cout << "\033[36m";
 
     for (unsigned char c : binaryString) {
         std::cout << std::hex << std::setfill('0') << std::setw(2) 
@@ -149,7 +159,6 @@ int main(int argc, char* argv[]) {
     bool DEBUG = false;
 
     if (argc > 1 && std::string(argv[1]) == "-d") {
-        std::cout << "\n\033[33mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
         DEBUG = true;
     }
 
@@ -177,6 +186,10 @@ int main(int argc, char* argv[]) {
             * CALL_FUNCTION: 0x83
         */
 
+        printGreetings();
+        if (DEBUG) std::cout << "\n\033[33mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
+
+
         CodeNavigator navigator;
         navigator.push(&code);
 
@@ -191,30 +204,43 @@ int main(int argc, char* argv[]) {
             std::vector<uint8_t> payload(segment.begin() + 1, segment.end());
 
             if(instruction == 0x83) {
-                if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (CALL_FUNCTION)" << std::endl;
+                if(DEBUG) std::cout << "--> Instruction: 0x83 (CALL_FUNCTION)" << std::endl;
                 std::vector<uint8_t> args(segment.begin() + 1, segment.begin() + 3);
                 std::vector<uint8_t> payload(segment.begin() + 4, segment.end());
                 std::string payloadString(payload.begin(), payload.end());
 
                 currCode->updateFromPayload(payloadString);
-                if(DEBUG) std::cout << "updated current frame from received payload..." << std::endl;
+                if(DEBUG) {
+                    std::cout << "* updated current frame from received payload..." << std::endl;
+                }
 
                 navigator.push(&currCode->getCodeFromVariable(args[0], args[1]));
                 currCode = navigator.peek();
-                if(DEBUG) printBinaryString(currCode->generatePayload());
+                if(DEBUG) {
+                    std::cout << "* pushed new frame to execution stack:" << std::endl;
+                    currCode->print();
+                    std::cout << "\n* generated payload for new frame: ";
+                    printBinaryString(currCode->generatePayload());
+                } 
             } else if(instruction == 0x53) {
-                if(DEBUG) std::cout << "--> Instruction: 0x" << std::hex << static_cast<int>(instruction) << std::dec << " (RETURN)" << std::endl;
+                if(DEBUG) std::cout << "--> Instruction: 0x53 (RETURN)" << std::endl;
                 navigator.pop();
                 currCode = navigator.peek();
             } else if(instruction == 0x02) {
-                if(DEBUG) std::cout << "\033[32m--> Received START signal, sending first frame:\033[0m" << std::endl;
+                if(DEBUG) {
+                    std::cout << "--> Instruction: 0x02 (START)" << std::endl;
+                    std::cout << "* " << "sending first frame:" << std::endl;
+                    currCode->print();
+                } 
             } else {
                 throw std::runtime_error("Instrução desconhecida");
             }
 
-            if(DEBUG) currCode->print();
+            
             std::cout << std::endl << std::endl;
         }
+
+        std::cout << "\n\n\033[32mAll instructions processed, exiting...\033[0m";
     } catch (const std::exception& e) {
         std::cerr << "Erro: " << e.what() << std::endl;
     }
