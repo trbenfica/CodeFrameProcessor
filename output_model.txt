@@ -1,31 +1,35 @@
-co_code: 
-globals: 50 
-co_names: 10 
-co_varnames: 30 2 "two" <code> 1 
-co_freevars: 50 60 "three" <code> 0 
-co_cellvars: 70 80 "four" <code> 1 
-co_consts: 
 
 co_code: 
 globals: 50 
 co_names: 10 
-co_varnames: 30 2 "two" <code> 1 
+co_varnames: 30 0 "two" <code> 1 
 co_freevars: 50 60 "three" <code> 0 
 co_cellvars: 70 80 "four" <code> 1 
 co_consts: 
 
-co_code: 
-globals: 50 
-co_names: 10 
-co_varnames: 30 2 "two" <code> 1 
-co_freevars: 50 60 "three" <code> 0 
-co_cellvars: 70 80 "four" <code> 1 
-co_consts: 
 
 co_code: 
 globals: 50 
 co_names: 10 
-co_varnames: 30 2 "two" <code> 1 
+co_varnames: 30 1 "two" <code> 1 
+co_freevars: 50 60 "three" <code> 0 
+co_cellvars: 70 80 "four" <code> 1 
+co_consts: 
+
+
+co_code: 
+globals: 50 
+co_names: 10 
+co_varnames: 30 1 "two" <code> 1 
+co_freevars: 50 60 "three" <code> 0 
+co_cellvars: 70 80 "four" <code> 1 
+co_consts: 
+
+
+co_code: 
+globals: 50 
+co_names: 10 
+co_varnames: 30 1 "two" <code> 1 
 co_freevars: 50 60 "three" <code> 0 
 co_cellvars: 70 80 "four" <code> 1 
 co_consts: 

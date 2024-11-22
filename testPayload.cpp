@@ -60,7 +60,6 @@ int main() {
 
     // Insere instrução de START
     char INIT = 0x02;
-    char recordSeparator = 0x1E; // Certifique-se de definir o valor de recordSeparator
     outfile.write(&INIT, sizeof(INIT));
     outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
     
@@ -69,7 +68,7 @@ int main() {
 
     Code::globals = {50};
     codeObj.setCoNames(std::vector<VarType>{10});
-    codeObj.setCoVarnames(std::vector<VarType>{30, 2, "two", childCode, true});
+    codeObj.setCoVarnames(std::vector<VarType>{30, 0, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
     generateCallFn(outfile, codeObj, 2, 1);
@@ -78,7 +77,7 @@ int main() {
 
     // segundo frame
     codeObj.setCoNames(std::vector<VarType>{10});
-    codeObj.setCoVarnames(std::vector<VarType>{30, 2, "two", childCode, true});
+    codeObj.setCoVarnames(std::vector<VarType>{30, 1, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
     generateCallFn(outfile, codeObj, 2, 1);
@@ -87,7 +86,7 @@ int main() {
 
     // terceiro frame
     codeObj.setCoNames(std::vector<VarType>{10});
-    codeObj.setCoVarnames(std::vector<VarType>{30, 2, "two", childCode, true});
+    codeObj.setCoVarnames(std::vector<VarType>{30, 1, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
     generateCallFn(outfile, codeObj, 2, 1);
@@ -96,15 +95,13 @@ int main() {
 
     // quarto frame
     codeObj.setCoNames(std::vector<VarType>{10});
-    codeObj.setCoVarnames(std::vector<VarType>{30, 2, "two", childCode, true});
+    codeObj.setCoVarnames(std::vector<VarType>{30, 1, "two", childCode, true});
     codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
     codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
-    generateCallFn(outfile, codeObj, 2, 1);
     codeObj.print();
     std::cout << std::endl;
 
     // retorna ao original
-    generateReturn(outfile);
     generateReturn(outfile);
     generateReturn(outfile);
     generateReturn(outfile);
