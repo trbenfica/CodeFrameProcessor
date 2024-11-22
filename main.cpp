@@ -89,6 +89,10 @@ public:
         }
         return navigationStack.top();
     }
+
+    bool empty() {
+        return navigationStack.empty();
+    }
 };
 
 std::string readPayloadFromFile(const std::string& filename) {
@@ -162,88 +166,86 @@ int main(int argc, char* argv[]) {
         DEBUG = true;
     }
 
-    try {
-        Code code = readCodeFromJsonFile("code.json");
-        Code::globals = code.co_names;
-        const std::string ENQ = "ENQ";
-        const std::string ACK = "ACK";
+    Code code = readCodeFromJsonFile("code.json");
+    Code::globals = code.co_names;
+    const std::string ENQ = "ENQ";
+    const std::string ACK = "ACK";
 
-        const char* filename = "master_instructions.bin";
-        std::ifstream file(filename, std::ios::binary);
+    const char* filename = "master_instructions.bin";
+    std::ifstream file(filename, std::ios::binary);
 
-        if (!file.is_open()) {
-            std::cerr << "Failed to open file: " << filename << std::endl;
-            return 1;
-        }
-
-        std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-        auto segments = splitByDelimiters(fileData, 0x03, 0x02);
-
-        /*
-            * INITIALIZE: 0x02
-            * RETURN_VALUE: 0x53
-            * CALL_FUNCTION: 0x83
-        */
-
-        printGreetings();
-        if (DEBUG) std::cout << "\n\033[33mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
-
-
-        CodeNavigator navigator;
-        navigator.push(&code);
-
-        Code* currCode = &code;
-        for (const auto& segment : segments) {
-            if (segment.empty()) {
-                continue;
-            }
-
-            // Extrai a instrução e o payload
-            uint8_t instruction = segment[0];
-            std::vector<uint8_t> payload(segment.begin() + 1, segment.end());
-
-            if(instruction == 0x83) {
-                if(DEBUG) std::cout << "--> Instruction: 0x83 (CALL_FUNCTION)" << std::endl;
-                std::vector<uint8_t> args(segment.begin() + 1, segment.begin() + 3);
-                std::vector<uint8_t> payload(segment.begin() + 4, segment.end());
-                std::string payloadString(payload.begin(), payload.end());
-
-                currCode->updateFromPayload(payloadString);
-                if(DEBUG) {
-                    std::cout << "* updated current frame from received payload..." << std::endl;
-                }
-
-                navigator.push(&currCode->getCodeFromVariable(args[0], args[1]));
-                currCode = navigator.peek();
-                if(DEBUG) {
-                    std::cout << "* pushed new frame to execution stack:" << std::endl;
-                    currCode->print();
-                    std::cout << "\n* generated payload for new frame: ";
-                    printBinaryString(currCode->generatePayload());
-                } 
-            } else if(instruction == 0x53) {
-                if(DEBUG) std::cout << "--> Instruction: 0x53 (RETURN)" << std::endl;
-                navigator.pop();
-                currCode = navigator.peek();
-            } else if(instruction == 0x02) {
-                if(DEBUG) {
-                    std::cout << "--> Instruction: 0x02 (START)" << std::endl;
-                    std::cout << "* " << "sending first frame:" << std::endl;
-                    currCode->print();
-                } 
-            } else {
-                throw std::runtime_error("Instrução desconhecida");
-            }
-
-            
-            std::cout << std::endl << std::endl;
-        }
-
-        std::cout << "\n\n\033[32mAll instructions processed, exiting...\033[0m";
-    } catch (const std::exception& e) {
-        std::cerr << "Erro: " << e.what() << std::endl;
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return 1;
     }
+
+    std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    auto segments = splitByDelimiters(fileData, 0x03, 0x02);
+
+
+    printGreetings();
+    if (DEBUG) std::cout << "\n\033[33mManager started on Debugger Mode...\033[0m" << std::endl << std::endl;
+
+
+    CodeNavigator navigator;
+    navigator.push(&code);
+
+    /*
+        * INITIALIZE: 0x02
+        * RETURN_VALUE: 0x53
+        * CALL_FUNCTION: 0x83
+    */
+
+    Code* currCode = &code;
+    for (const auto& segment : segments) {
+        if (segment.empty() || navigator.empty()) {
+            continue;
+        }
+
+        // Extrai a instrução e o payload
+        uint8_t instruction = segment[0];
+        std::vector<uint8_t> payload(segment.begin() + 1, segment.end());
+
+        if(instruction == 0x83) {
+            if(DEBUG) std::cout << "--> Instruction: 0x83 (CALL_FUNCTION)" << std::endl;
+            std::vector<uint8_t> args(segment.begin() + 1, segment.begin() + 3);
+            std::vector<uint8_t> payload(segment.begin() + 4, segment.end());
+            std::string payloadString(payload.begin(), payload.end());
+
+            currCode->updateFromPayload(payloadString);
+            if(DEBUG) {
+                std::cout << "* updated current frame from received payload..." << std::endl;
+            }
+
+            navigator.push(&currCode->getCodeFromVariable(args[0], args[1]));
+            currCode = navigator.peek();
+            if(DEBUG) {
+                std::cout << "* pushed new frame to execution stack:" << std::endl;
+                currCode->print();
+                std::cout << "\n* generated payload for new frame: ";
+                printBinaryString(currCode->generatePayload());
+            } 
+        } else if(instruction == 0x53) {
+            if(DEBUG) std::cout << "--> Instruction: 0x53 (RETURN)" << std::endl;
+            navigator.pop();
+            currCode = navigator.peek();
+            if(DEBUG) currCode->print();
+        } else if(instruction == 0x02) {
+            if(DEBUG) {
+                std::cout << "--> Instruction: 0x02 (START)" << std::endl;
+                std::cout << "* " << "sending first frame:" << std::endl;
+                currCode->print();
+            } 
+        } else {
+            throw std::runtime_error("Instrução desconhecida");
+        }
+
+        
+        std::cout << std::endl << std::endl;
+    }
+
+    std::cout << "\033[32mAll instructions processed, exiting...\033[0m\n\n";
 
     return 0;
 }
