@@ -169,7 +169,10 @@ int main(int argc, char* argv[]) {
     Code code = readCodeFromJsonFile("code.json");
     Code::globals = code.co_names;
     const std::string ENQ = "ENQ";
-    const std::string ACK = "ACK";
+    const uint8_t ACK = 0x06;
+
+    // apenas para DEBUG
+    std::string ackString(1, static_cast<char>(ACK));
 
     const char* filename = "master_instructions.bin";
     std::ifstream file(filename, std::ios::binary);
@@ -208,7 +211,11 @@ int main(int argc, char* argv[]) {
         std::vector<uint8_t> payload(segment.begin() + 1, segment.end());
 
         if(instruction == 0x83) {
-            if(DEBUG) std::cout << "--> Instruction: 0x83 (CALL_FUNCTION)" << std::endl;
+            if(DEBUG) {
+                std::cout << "--> Instruction: 0x83 (CALL_FUNCTION)" << std::endl;
+                std::cout << "* sending ACK to master: ";
+                printBinaryString(ackString);
+            } 
             std::vector<uint8_t> args(segment.begin() + 1, segment.begin() + 3);
             std::vector<uint8_t> payload(segment.begin() + 4, segment.end());
             std::string payloadString(payload.begin(), payload.end());
@@ -227,7 +234,11 @@ int main(int argc, char* argv[]) {
                 printBinaryString(currCode->generatePayload());
             } 
         } else if(instruction == 0x53) {
-            if(DEBUG) std::cout << "--> Instruction: 0x53 (RETURN)" << std::endl;
+            if(DEBUG) {
+                std::cout << "--> Instruction: 0x53 (RETURN)" << std::endl;
+                std::cout << "* sending ACK to master: ";
+                printBinaryString(ackString);
+            }
             navigator.pop();
             currCode = navigator.peek();
             if(DEBUG) {
@@ -237,6 +248,8 @@ int main(int argc, char* argv[]) {
         } else if(instruction == 0x02) {
             if(DEBUG) {
                 std::cout << "--> Instruction: 0x02 (START)" << std::endl;
+                std::cout << "* sending ACK to master: ";
+                printBinaryString(ackString);
                 std::cout << "* " << "sending first frame:" << std::endl;
                 currCode->print();
             } 
