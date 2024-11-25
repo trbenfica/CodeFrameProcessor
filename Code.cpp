@@ -164,6 +164,7 @@ std::string Code::generatePayload() const {
     };
 
     std::ostringstream result;
+    result << GS;
     hexToBinaryStream(co_code, result);
     result << GS;
 
@@ -240,6 +241,8 @@ std::string Code::generatePayload() const {
         }, co_consts[i]);
     }
 
+    result << GS;
+    
     // Salva o payload em um arquivo binário
     std::string resultString = result.str();
     std::ofstream outFile("output.bin", std::ios::binary);
