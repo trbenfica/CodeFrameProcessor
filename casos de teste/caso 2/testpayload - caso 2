@@ -1,0 +1,83 @@
+    Code codeObj, childCode;
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{0});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+     Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    Code::globals = {};
+    codeObj.setCoNames(std::vector<VarType>{1});
+    codeObj.setCoVarnames(std::vector<VarType>{});
+    codeObj.setCoFreevars(std::vector<VarType>{});
+    codeObj.setCoCellvars(std::vector<VarType>{});
+    generateCallFn(outfile, codeObj, 1, 0);
+
+    // retorna ao original
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);
+    generateReturn(outfile);

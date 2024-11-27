@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
             } 
         } else if(instruction == 0x02) {
             if(DEBUG) {
-                std::cout << "--> Instruction: 0x02 (START)" << std::endl;
+                std::cout << "--> Instruction: 0x02 (INIT)" << std::endl;
                 std::cout << "* sending ACK to master: ";
                 printBinaryString(ackString);
                 std::cout << "* " << "sending first frame:" << std::endl;
