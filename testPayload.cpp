@@ -53,19 +53,22 @@ int main() {
     char INIT = 0x02;
     outfile.write(&INIT, sizeof(INIT));
     outfile.write(reinterpret_cast<const char*>(&recordSeparator), sizeof(recordSeparator));
-    
-    // primeiro frame
-    Code codeObj, childCode;
 
-    Code::globals = {};
-    codeObj.setCoNames(std::vector<VarType>{0});
-    codeObj.setCoVarnames(std::vector<VarType>{});
+    Code codeObj;
+    
+    // Configuração de payload de recebimento e injeção de CALL_FUNCTION
+    Code::globals = {0, 20};
+    codeObj.setCoNames(std::vector<VarType>{"two", true});
+    codeObj.setCoVarnames(std::vector<VarType>{nullptr, 3});
     codeObj.setCoFreevars(std::vector<VarType>{});
     codeObj.setCoCellvars(std::vector<VarType>{});
-    generateCallFn(outfile, codeObj, 1, 0);
+    generateCallFn(outfile, codeObj, 0, 0);
 
-  
+    // retorna ao original
     generateReturn(outfile);
+
+
+
 
     // Fechar os arquivos
     outfile.close();

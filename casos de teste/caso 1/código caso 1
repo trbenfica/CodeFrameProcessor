@@ -1,0 +1,9 @@
+Code::globals = {10, 20, "two", childCode, true};
+codeObj.setCoNames(std::vector<VarType>{10, 20, "two", childCode, true});
+codeObj.setCoVarnames(std::vector<VarType>{10, 0, "two", childCode, true});
+codeObj.setCoFreevars(std::vector<VarType>{50, 60, "three", childCode, false});
+codeObj.setCoCellvars(std::vector<VarType>{70, 80, "four", childCode, true});
+generateCallFn(outfile, codeObj, 2, 1);
+
+// retorna ao original
+generateReturn(outfile);
