@@ -2,15 +2,15 @@
 
 Siga os passos abaixo para clonar o repositório, compilar e executar o projeto:  
 
-1. **Clone o repositório**  
+1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/seu-repositorio.git
+git clone https://github.com/trbenfica/CodeFrameProcessor
 ```
 
 2. Entre na pasta do projeto
 
 ```bash
-cd seu-repositorio
+cd CodeFrameProcessor
 ```
 3. Compile o código
 Use o comando abaixo para compilar os arquivos:
